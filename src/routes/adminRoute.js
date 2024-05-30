@@ -21,4 +21,8 @@ router.get(
   controller.adminController.showAdminProfile
 );
 
+router.post("/forget-password", controller.adminController.forgetPassword);
+
+router.put("/reset-password", controller.adminController.resetPassword);
+
 module.exports = router;
