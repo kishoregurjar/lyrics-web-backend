@@ -20,24 +20,33 @@ const jwt = {
     verifyUserToken: async (req, res, next) => {
         try {
             let token = req.headers.authorization;
+            console.log(token, "token")
             if (!token) {
-                return res
-                    .status(401)
-                    .json({ message: "Access Denied: Token not provided" });
+                return res.status(401).json({ message: "Access Denied: Token not provided" });
             }
 
-            const decoded = jsonwebtoken.verify(token, SECRET_KEY);
+            let decoded;
+            try {
+                decoded = jsonwebtoken.verify(token, SECRET_KEY);
+            } catch (err) {
+                if (err.name === 'TokenExpiredError') {
+                    return res.status(401).json({ message: "Session timeout: Please login again" });
+                }
+                return res.status(401).json({ message: "Access Denied: Invalid Token" });
+            }
+
             if (!decoded) {
                 return res.status(401).json({ message: "Access Denied: Invalid Token" });
             }
+
             const user = await User.findById(decoded._id);
             if (!user) {
                 return res.status(404).json({ message: "User not found" });
             }
+
             const currentTime = new Date();
-            console.log(currentTime - user.lastApiHitTime)
             if (user.lastApiHitTime && (currentTime - user.lastApiHitTime) >= MAX_SESSION_DURATION) {
-                return res.status(401).json({ message: "Session timeout: You have been inactive for too long" });
+                return res.status(401).json({ message: "Session timeout: Please login again" });
             }
 
             if (user.role !== 'user') {

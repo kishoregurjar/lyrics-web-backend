@@ -1,7 +1,7 @@
 const express = require('express');
 const controller = require('../controllers/indexController');
 const { verifyUserToken } = require('../middlewares/authMiddleware');
-const { validate, userSignupSchema, userLoginSchema, userEditSchema } = require('../middlewares/userValidation');
+const { validate, userSignupSchema, userLoginSchema, userEditSchema, userChangePasswordSchema } = require('../middlewares/userValidation');
 const router = express.Router();
 
 
@@ -15,5 +15,6 @@ router.post('/login-user', validate(userLoginSchema), controller.userController.
 router.get('/user-profile', verifyUserToken, controller.userController.showUserProfile)
 router.put('/verify-user', controller.userController.verifyUser)
 router.put('/edit-user', validate(userEditSchema), verifyUserToken, controller.userController.editUserProfile)
+router.put('/change-user-password', validate(userChangePasswordSchema), verifyUserToken, controller.userController.changePassword)
 
 module.exports = router

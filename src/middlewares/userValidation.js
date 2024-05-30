@@ -52,6 +52,16 @@ const userEditSchema = Joi.object({
     }),
 });
 
+const userChangePasswordSchema = Joi.object({
+    oldPassword: Joi.string().trim().required().messages({
+        'string.empty': 'Old Password is required',
+    }),
+    newPassword: Joi.string().trim().pattern(new RegExp('^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[!@#$%^&*()_+\\-=[\\]{};:"|,.<>/?]).{8,}$')).required().messages({
+        'string.empty': 'New Password is required',
+        'string.pattern.base': 'Password must have at least one uppercase letter, one lowercase letter, one digit, one special character, and be at least 8 characters long',
+    }),
+});
+
 const validate = (schema) => {
     return (req, res, next) => {
         const { error } = schema.validate(req.body);
@@ -68,5 +78,6 @@ module.exports = {
     userSignupSchema,
     userLoginSchema,
     userEditSchema,
+    userChangePasswordSchema,
     validate
 };

@@ -177,3 +177,41 @@ module.exports.editUserProfile = async (req, res) => {
         return catchRes(res, error);
     }
 }
+
+module.exports.changePassword = async (req, res) => {
+    const userId = req.user._id;
+    const { oldPassword, newPassword } = req.body;
+    const session = await mongoose.startSession();
+    session.startTransaction();
+
+    try {
+        const user = await User.findById(userId).session(session);
+
+        if (!user) {
+            await session.abortTransaction();
+            session.endSession();
+            return successRes(res, 401, false, "User not found.");
+        }
+
+        const isMatch = await bcrypt.compare(oldPassword, user.password);
+        if (!isMatch) {
+            await session.abortTransaction();
+            session.endSession();
+            return successRes(res, 400, false, "Old password is incorrect.");
+        }
+
+        const hashedPassword = await bcrypt.hash(newPassword, 12);
+        user.password = hashedPassword;
+
+        await user.save({ session });
+
+        await session.commitTransaction();
+        session.endSession();
+
+        return successRes(res, 200, true, "Password updated successfully.");
+    } catch (error) {
+        await session.abortTransaction();
+        session.endSession();
+        return catchRes(res, error);
+    }
+};
