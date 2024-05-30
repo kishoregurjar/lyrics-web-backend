@@ -103,17 +103,18 @@ module.exports.resetPassword = async (req, res) => {
     try {
       decoded = jwt.verify(resetToken, process.env.JWT_SECRET);
     } catch (error) {
-      return res
-        .status(400)
-        .json({ success: false, message: "Invalid or Expired Token" });
+      return successRes(res, 400, false, "Invalid or Expired Reset Token.");
     }
 
     // Find the admin by ID
     const existingAdmin = await Admin.findById(decoded._id);
     if (!existingAdmin) {
-      return res
-        .status(404)
-        .json({ success: false, message: "Admin not found" });
+      return successRes(
+        res,
+        404,
+        false,
+        "Admin with this Email does not exist"
+      );
     }
 
     // Hash the new password
@@ -124,13 +125,17 @@ module.exports.resetPassword = async (req, res) => {
     existingAdmin.password = hashedPassword;
     await existingAdmin.save();
 
-    return res
-      .status(200)
-      .json({ success: true, message: "Password has been reset successfully" });
+    return successRes(res, 200, true, "Password has been Reset Successfully");
   } catch (error) {
     console.error("Error resetting password:", error);
-    return res
-      .status(500)
-      .json({ success: false, message: "Internal server error" });
+    return catchRes(res, error);
+  }
+};
+
+module.exports.changePassword = async (req, res) => {
+  try {
+  } catch (error) {
+    console.error("Error resetting password:", error);
+    return catchRes(res, error);
   }
 };
