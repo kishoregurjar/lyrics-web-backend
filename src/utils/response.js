@@ -7,7 +7,7 @@ const successRes = (res, status, success, message, data) => {
     })
 }
 
-const SwrRes = (res) => {
+const swrRes = (res) => {
     return res.status(400).json({
         success: false,
         message: 'Something Went Wrong'
@@ -23,6 +23,6 @@ const catchRes = (res, error) => {
 
 module.exports = {
     successRes,
-    SwrRes,
+    swrRes,
     catchRes
 }
