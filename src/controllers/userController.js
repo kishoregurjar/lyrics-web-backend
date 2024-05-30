@@ -1,3 +1,4 @@
+const { assignJwt } = require("../middlewares/authMiddleware");
 const User = require("../models/userModel");
 const { catchRes, successRes, SwrRes } = require("../utils/response");
 const bcrypt = require('bcryptjs');
@@ -49,3 +50,47 @@ module.exports.createUser = async (req, res, next) => {
         return catchRes(res, error);
     }
 };
+
+module.exports.loginUser = async (req, res) => {
+    const { email, password } = req.body;
+
+    if (!email || !password) {
+        return successRes(res, 400, false, "All fields are required.");
+    }
+
+    try {
+        const user = await User.findOne({ email });
+
+        if (!user || !(await bcrypt.compare(password, user.password))) {
+            return successRes(res, 401, false, "Invalid email or password.");
+        }
+
+        if (!user.isVerified) {
+            return successRes(res, 401, false, "User is not verified.");
+        }
+        if (!user.isActive) {
+            return successRes(res, 401, false, "User is not active.");
+        }
+        const token = assignJwt({
+            _id: user._id,
+            email: user.email,
+            role: 'user'
+        });
+
+        const userObj = {
+            id: user._id,
+            firstName: user.firstName,
+            lastName: user.lastName,
+            email: user.email,
+            mobile: user.mobile,
+            isVerified: user.isVerified,
+            isActive: user.isActive,
+            token: token
+        };
+
+        return successRes(res, 200, true, "Login successful", userObj);
+    } catch (error) {
+        return catchRes(res, error);
+    }
+};
+
