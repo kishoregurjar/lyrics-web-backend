@@ -16,7 +16,7 @@ const userSchema = Joi.object({
         'string.empty': 'Email is required',
         'string.email': 'Please enter a valid email address',
     }),
-    password: Joi.string().pattern(new RegExp('^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]{8,}$')).required().messages({
+    password: Joi.string().pattern(new RegExp('^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[!@#$%^&*()_+\\-=[\\]{};:"|,.<>/?]).{8,}$')).required().messages({
         'string.empty': 'Password is required',
         'string.pattern.base': 'Password must have at least one uppercase letter, one lowercase letter, one digit, one special character, and be at least 8 characters long',
     }),
