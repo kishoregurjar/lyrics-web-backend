@@ -6,7 +6,6 @@ const mongoose = require('mongoose');
 module.exports.createUser = async (req, res, next) => {
     let { firstName, lastName, email, password, mobile } = req.body;
 
-    // Input validation (you can use a library like Joi for more robust validation)
     if (!firstName || !lastName || !email || !password || !mobile) {
         return catchRes(res, "All fields are required.");
     }
@@ -15,7 +14,6 @@ module.exports.createUser = async (req, res, next) => {
     session.startTransaction();
 
     try {
-        // Check if user already exists
         const existingUser = await User.findOne({ email }).session(session);
         if (existingUser) {
             await session.abortTransaction();
@@ -43,8 +41,7 @@ module.exports.createUser = async (req, res, next) => {
 
         await session.commitTransaction();
         session.endSession();
-
-        return successRes(res, 201, true, "User created successfully.", newUser);
+        return successRes(res, 201, true, "User created successfully.", null);
 
     } catch (error) {
         await session.abortTransaction();
