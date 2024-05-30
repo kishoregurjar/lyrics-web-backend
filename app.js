@@ -4,6 +4,8 @@ const app = express();
 const server = http.createServer(app);
 const cors = require("cors");
 const helmet = require("helmet");
+const rateLimit = require("express-rate-limit");
+const compression = require("compression");
 const { dummyApiFun } = require("./src/templates/dummyTemplate");
 const { connectDB } = require("./src/config/connection");
 require("dotenv").config();
@@ -11,6 +13,14 @@ const indexRoute = require("./src/routes/indexRoute");
 const { winstonLogMiddleware } = require("./src/middlewares/loggerMiddleware");
 
 let PORT = process.env.APP_PORT || 3007;
+
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 100,
+  message: "Too many requests from this IP, please try again after 15 minutes"
+});
+app.use(limiter);
+app.use(compression());
 
 app.use(cors());
 app.use(helmet());
@@ -23,7 +33,7 @@ app.use(
 
 connectDB().catch(console.dir);
 
-app.use(winstonLogMiddleware); // log every request to logs using winston
+app.use(winstonLogMiddleware);
 
 app.use("/api/v1", indexRoute);
 

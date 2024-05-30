@@ -3,6 +3,7 @@ const User = require("../models/userModel");
 const Admin = require("../models/adminModel");
 const SECRET_KEY = process.env.JWT_SECRET;
 const MAX_SESSION_DURATION = 60 * 60 * 1000;
+
 const jwt = {
     assignJwt: (user) => {
         const payload = {
@@ -20,7 +21,6 @@ const jwt = {
     verifyUserToken: async (req, res, next) => {
         try {
             let token = req.headers.authorization;
-            console.log(token, "token")
             if (!token) {
                 return res.status(401).json({ message: "Access Denied: Token not provided" });
             }
