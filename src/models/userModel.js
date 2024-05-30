@@ -48,6 +48,10 @@ const userSchema = new mongoose.Schema({
         default: "user",
         trim: true,
     },
+    lastApiHitTime: {
+        type: Date,
+        default: Date.now
+    }
 });
 
 const User = mongoose.model('User', userSchema);

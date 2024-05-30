@@ -71,6 +71,10 @@ module.exports.loginUser = async (req, res) => {
         if (!user.isActive) {
             return successRes(res, 401, false, "User is not active.");
         }
+
+        user.lastApiHitTime = new Date();
+        await user.save();
+
         const token = assignJwt({
             _id: user._id,
             email: user.email,
@@ -93,4 +97,21 @@ module.exports.loginUser = async (req, res) => {
         return catchRes(res, error);
     }
 };
+
+module.exports.showUserProfile = async (req, res) => {
+    try {
+        const userId = req.user._id;
+        const user = await User.findById(userId).select('-password -__v -createdAt -updatedAt');
+
+        if (!user) {
+            return successRes(res, 401, false, "User not found.");
+        }
+
+        return successRes(res, 200, true, "User Details.", user);
+    } catch (error) {
+        console.error(error);
+        return res.status(500).json({ message: "Internal Server Error" });
+    }
+};
+
 

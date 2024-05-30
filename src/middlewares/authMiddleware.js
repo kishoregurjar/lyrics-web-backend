@@ -2,7 +2,7 @@ const jsonwebtoken = require('jsonwebtoken');
 const User = require('../models/userModel');
 const Admin = require('../models/adminModel');
 const SECRET_KEY = process.env.JWT_SECRET;
-
+const MAX_SESSION_DURATION = 60 * 60 * 1000;
 const jwt = {
     assignJwt: (user) => {
         const payload = {
@@ -19,7 +19,7 @@ const jwt = {
 
     verifyUserToken: async (req, res, next) => {
         try {
-            let token = req.headers.authorization
+            let token = req.headers.authorization;
             if (!token) {
                 return res.status(401).json({ message: "Access Denied: Token not provided" });
             }
@@ -28,10 +28,14 @@ const jwt = {
             if (!decoded) {
                 return res.status(401).json({ message: "Access Denied: Invalid Token" });
             }
-
             const user = await User.findById(decoded._id);
             if (!user) {
                 return res.status(404).json({ message: "User not found" });
+            }
+            const currentTime = new Date();
+            console.log(currentTime - user.lastApiHitTime)
+            if (user.lastApiHitTime && (currentTime - user.lastApiHitTime) >= MAX_SESSION_DURATION) {
+                return res.status(401).json({ message: "Session timeout: You have been inactive for too long" });
             }
 
             if (user.role !== 'user') {
@@ -42,9 +46,13 @@ const jwt = {
                 return res.status(403).json({ message: "User deactivated" });
             }
 
+            user.lastApiHitTime = currentTime;
+            await user.save();
+
             req.user = user;
             next();
         } catch (error) {
+            console.error(error);
             return res.status(500).json({ message: "Internal Server Error" });
         }
     },
