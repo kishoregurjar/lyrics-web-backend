@@ -3,10 +3,12 @@ const User = require("../models/userModel");
 const { catchRes, successRes, SwrRes } = require("../utils/response");
 const bcrypt = require('bcryptjs');
 const mongoose = require('mongoose');
+const { genericMail } = require("../utils/sendMail");
+const jwt = require('jsonwebtoken');
 
 module.exports.createUser = async (req, res, next) => {
     let { firstName, lastName, email, password, mobile } = req.body;
-
+    email = email.toLowerCase();
     if (!firstName || !lastName || !email || !password || !mobile) {
         return catchRes(res, "All fields are required.");
     }
@@ -42,6 +44,13 @@ module.exports.createUser = async (req, res, next) => {
 
         await session.commitTransaction();
         session.endSession();
+        const token = assignJwt({
+            _id: user._id,
+            email: user.email,
+            role: 'user'
+        });
+        const verifyLink = `${process.env.VERIFY_LINK}/${token}`
+        genericMail(email, user.firstName, verifyLink, 'welcome')
         return successRes(res, 201, true, "User created successfully.", null);
 
     } catch (error) {
@@ -53,7 +62,7 @@ module.exports.createUser = async (req, res, next) => {
 
 module.exports.loginUser = async (req, res) => {
     const { email, password } = req.body;
-
+    email = email.toLowerCase();
     if (!email || !password) {
         return successRes(res, 400, false, "All fields are required.");
     }
@@ -109,8 +118,33 @@ module.exports.showUserProfile = async (req, res) => {
 
         return successRes(res, 200, true, "User Details.", user);
     } catch (error) {
-        console.error(error);
-        return res.status(500).json({ message: "Internal Server Error" });
+        return catchRes(res, error);
+    }
+};
+
+
+
+module.exports.verifyUser = async (req, res) => {
+    try {
+        let token = req.body.token;
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        if (!decoded) {
+            return successRes(res, 401, false, "Invalid token");
+        }
+        const user = await User.findByIdAndUpdate(
+            decoded._id,
+            { isVerified: true },
+            { new: true }
+        );
+
+        if (!user) {
+            return successRes(res, 401, false, "User not found.");
+        }
+
+        return successRes(res, 200, true, "User verified successfully.");
+
+    } catch (error) {
+        return catchRes(res, error);
     }
 };
 
