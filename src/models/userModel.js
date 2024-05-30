@@ -22,9 +22,10 @@ const userSchema = new mongoose.Schema({
         required: true,
         trim: true
     },
-    dateOfBirth: {
-        type: Date,
-        required: true
+    mobile: {
+        type: String,
+        required: true,
+        trim: true
     },
     createdAt: {
         type: Date,
