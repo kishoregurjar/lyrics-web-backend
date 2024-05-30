@@ -4,6 +4,7 @@ const {
   validateAdminLogin,
   handleValidationErrors,
 } = require("../middlewares/adminValidation");
+const { verifyAdminToken } = require("../middlewares/authMiddleware");
 
 const router = express.Router();
 
@@ -12,6 +13,12 @@ router.post(
   validateAdminLogin,
   handleValidationErrors,
   controller.adminController.adminLogin
+);
+
+router.get(
+  "/admin-profile",
+  verifyAdminToken,
+  controller.adminController.showAdminProfile
 );
 
 module.exports = router;
