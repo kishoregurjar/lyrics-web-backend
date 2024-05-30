@@ -146,4 +146,34 @@ module.exports.verifyUser = async (req, res) => {
     }
 };
 
+module.exports.editUserProfile = async (req, res) => {
+    const userId = req.user._id;
+    let { firstName, lastName, mobile } = req.body;
+    const session = await mongoose.startSession();
+    session.startTransaction();
+    try {
+        const update = {};
+        if (firstName) update.firstName = firstName;
+        if (lastName) update.lastName = lastName;
+        if (mobile) update.mobile = mobile;
 
+        const options = { new: true, session };
+
+        const user = await User.findByIdAndUpdate(userId, update, options);
+
+        if (!user) {
+            await session.abortTransaction();
+            session.endSession();
+            return successRes(res, 401, false, "User not found.");
+        }
+
+        await session.commitTransaction();
+        session.endSession();
+
+        return successRes(res, 200, true, "User profile updated successfully.", user);
+    } catch (error) {
+        await session.abortTransaction();
+        session.endSession();
+        return catchRes(res, error);
+    }
+}

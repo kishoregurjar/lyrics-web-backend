@@ -35,6 +35,23 @@ const userLoginSchema = Joi.object({
     }),
 });
 
+const userEditSchema = Joi.object({
+    firstName: Joi.string().trim().min(2).max(30).required().messages({
+        'string.empty': 'First name is required',
+        'string.min': 'First name should have a minimum length of 2',
+        'string.max': 'First name should have a maximum length of 30',
+    }),
+    lastName: Joi.string().trim().min(2).max(30).required().messages({
+        'string.empty': 'Last name is required',
+        'string.min': 'Last name should have a minimum length of 2',
+        'string.max': 'Last name should have a maximum length of 30',
+    }),
+    mobile: Joi.string().trim().pattern(new RegExp('^[0-9]{10}$')).required().messages({
+        'string.empty': 'Mobile number is required',
+        'string.pattern.base': 'Mobile number must be a 10-digit number',
+    }),
+});
+
 const validate = (schema) => {
     return (req, res, next) => {
         const { error } = schema.validate(req.body);
@@ -50,5 +67,6 @@ const validate = (schema) => {
 module.exports = {
     userSignupSchema,
     userLoginSchema,
+    userEditSchema,
     validate
 };
