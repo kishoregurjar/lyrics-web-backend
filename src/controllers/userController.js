@@ -61,7 +61,7 @@ module.exports.createUser = async (req, res, next) => {
 };
 
 module.exports.loginUser = async (req, res) => {
-    const { email, password } = req.body;
+    let { email, password } = req.body;
     email = email.toLowerCase();
     if (!email || !password) {
         return successRes(res, 400, false, "All fields are required.");
@@ -121,8 +121,6 @@ module.exports.showUserProfile = async (req, res) => {
         return catchRes(res, error);
     }
 };
-
-
 
 module.exports.verifyUser = async (req, res) => {
     try {
