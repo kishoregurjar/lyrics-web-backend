@@ -9,8 +9,8 @@ const router = express.Router();
 
 router.post(
   "/login-admin",
-  //   validateAdminLogin,
-  //   handleValidationErrors,
+  validateAdminLogin,
+  handleValidationErrors,
   controller.adminController.adminLogin
 );
 

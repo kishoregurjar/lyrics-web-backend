@@ -15,7 +15,9 @@ exports.validateAdminLogin = [
     .withMessage("Password must be Required")
     .isLength({ min: 8 })
     .withMessage("Password must be at least 8 characters long")
-    .matches(/^(?=.*\d)(?=.*[a-z])(?=.*[A-Z])[0-9a-zA-Z]{8,}$/)
+    .matches(
+      /^(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?])[0-9a-zA-Z!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]{8,}$/
+    )
     .withMessage(
       "Password must contain at least a lowercase letter, uppercase letter & number"
     ),
