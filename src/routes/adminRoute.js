@@ -3,6 +3,8 @@ const controller = require("../controllers/indexController");
 const {
   validateAdminLogin,
   handleValidationErrors,
+  validateForgetPassword,
+  validateResetPassword,
 } = require("../middlewares/adminValidation");
 const { verifyAdminToken } = require("../middlewares/authMiddleware");
 
@@ -21,8 +23,18 @@ router.get(
   controller.adminController.showAdminProfile
 );
 
-router.post("/forget-password", controller.adminController.forgetPassword);
+router.post(
+  "/forget-password",
+  validateForgetPassword,
+  handleValidationErrors,
+  controller.adminController.forgetPassword
+);
 
-router.put("/reset-password", controller.adminController.resetPassword);
+router.put(
+  "/reset-password",
+  validateResetPassword,
+  handleValidationErrors,
+  controller.adminController.resetPassword
+);
 
 module.exports = router;
