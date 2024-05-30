@@ -21,7 +21,7 @@ async function seedAdmin() {
       fullName: "adminLw",
       email: "adminlw@yopmail.com",
       mobile: "1234567890",
-      password: "Pass123#",
+      password: "Password@123#",
       otp: null,
       role: "admin", // or 'superadmin'
     };
