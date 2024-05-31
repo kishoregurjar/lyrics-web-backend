@@ -1,4 +1,4 @@
-module.exports.forgetPassTempFun = (token, link) => {
+module.exports.forgetPassTempFun = (username, link) => {
   return `<!DOCTYPE html>
     <html lang="en">
     <head>
@@ -61,7 +61,7 @@ module.exports.forgetPassTempFun = (token, link) => {
         <div class="container">
             <div class="verification-box">
                 <h1>Reset Password Token</h1>
-                <p>Token : <span id="username">${token}</span></p>
+                <p>Username : <span id="username">${username}</span></p>
                 <p>Thank you for signing up for Lyrics Web. Please click the button below to verify your email address.</p>
                 <a href="${link}" id="verification-link" class="verify-button">Verify Email</a>
             </div>

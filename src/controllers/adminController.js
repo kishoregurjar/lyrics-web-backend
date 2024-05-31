@@ -4,6 +4,7 @@ const { catchRes, successRes } = require("../utils/response");
 const mongoose = require("mongoose");
 const { assignJwt } = require("../middlewares/authMiddleware");
 const jwt = require("jsonwebtoken");
+const { genericMail } = require("../utils/sendMail");
 
 module.exports.adminLogin = async (req, res) => {
   try {
@@ -80,7 +81,14 @@ module.exports.forgetPassword = async (req, res) => {
       }
     );
 
-    console.log(resetToken);
+    const resetPassLink = `${process.env.VERIFY_LINK}/${resetToken}`;
+
+    genericMail(
+      existingAdmin.email,
+      existingAdmin.fullName,
+      resetPassLink,
+      "forget"
+    );
 
     return successRes(
       res,
@@ -127,7 +135,7 @@ module.exports.resetPassword = async (req, res) => {
 
     return successRes(res, 200, true, "Password has been Reset Successfully");
   } catch (error) {
-    console.error("Error resetting password:", error);
+    console.error("Error Resetting Password:", error);
     return catchRes(res, error);
   }
 };
@@ -135,7 +143,7 @@ module.exports.resetPassword = async (req, res) => {
 module.exports.changePassword = async (req, res) => {
   try {
   } catch (error) {
-    console.error("Error resetting password:", error);
+    console.error("Error Changing Password:", error);
     return catchRes(res, error);
   }
 };
