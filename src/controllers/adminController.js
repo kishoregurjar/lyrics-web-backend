@@ -59,6 +59,10 @@ module.exports.forgetPassword = async (req, res) => {
   try {
     const { email } = req.body;
 
+    if (!email) {
+      return successRes(res, 400, false, "All Fields are Required.");
+    }
+
     const existingAdmin = await Admin.findOne({ email });
     if (!existingAdmin) {
       return successRes(
@@ -106,6 +110,10 @@ module.exports.resetPassword = async (req, res) => {
   try {
     const { resetToken, newPassword } = req.body;
 
+    if (!resetToken || !newPassword) {
+      return successRes(res, 400, false, "All Fields are Required.");
+    }
+
     // Verify the token
     let decoded;
     try {
@@ -142,6 +150,33 @@ module.exports.resetPassword = async (req, res) => {
 
 module.exports.changePassword = async (req, res) => {
   try {
+    const adminId = req.user._id;
+    const { currentPassword, newPassword } = req.body;
+
+    if (!currentPassword || !newPassword) {
+      return successRes(res, 400, false, "All Fields are Required.");
+    }
+
+    const existingAdmin = await Admin.findById(adminId);
+    if (!existingAdmin) {
+      return successRes(res, 404, false, "Admin Not Found");
+    }
+
+    const isMatch = await bcrypt.compare(
+      currentPassword,
+      existingAdmin.password
+    );
+    if (!isMatch) {
+      return successRes(res, 400, false, "Current Password is Incorrect");
+    }
+
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(newPassword, salt);
+
+    existingAdmin.password = hashedPassword;
+    await existingAdmin.save();
+
+    return successRes(res, 200, true, "Password has been Changed Successfully");
   } catch (error) {
     console.error("Error Changing Password:", error);
     return catchRes(res, error);
