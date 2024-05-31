@@ -77,6 +77,22 @@ const userResetPasswordSchema = Joi.object({
     token: Joi.string().trim().required()
 });
 
+const userFeedbackValidation = Joi.object({
+    name: Joi.string().trim().required().messages({
+        'string.empty': 'Name is required',
+    }),
+    email: Joi.string().trim().email().required().messages({
+        'string.empty': 'Email is required',
+        'string.email': 'Email must be a valid email address',
+    }),
+    subject: Joi.string().trim().required().messages({
+        'string.empty': 'Subject is required',
+    }),
+    message: Joi.string().trim().required().messages({
+        'string.empty': 'Message is required',
+    })
+});
+
 const validate = (schema) => {
     return (req, res, next) => {
         const { error } = schema.validate(req.body);
@@ -96,5 +112,6 @@ module.exports = {
     userChangePasswordSchema,
     forgetPasswordSchema,
     userResetPasswordSchema,
+    userFeedbackValidation,
     validate
 };

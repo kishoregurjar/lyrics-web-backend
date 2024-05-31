@@ -5,6 +5,7 @@ const bcrypt = require('bcryptjs');
 const mongoose = require('mongoose');
 const { genericMail } = require("../utils/sendMail");
 const jwt = require('jsonwebtoken');
+const Feedback = require("../models/reviewsModel");
 
 module.exports.createUser = async (req, res, next) => {
     let { firstName, lastName, email, password, mobile } = req.body;
@@ -277,3 +278,36 @@ module.exports.resetPassword = async (req, res) => {
         return catchRes(res, error);
     }
 };
+
+module.exports.submitFeedBack = async (req, res) => {
+    const session = await mongoose.startSession();
+    session.startTransaction();
+
+    try {
+        let { name, email, subject, message } = req.body;
+        email = email.toLowerCase();
+
+        const feedback = new Feedback({
+            name,
+            email,
+            subject,
+            message,
+        });
+
+        let saveFeedback = await feedback.save({ session });
+        if (!saveFeedback) {
+            await session.abortTransaction();
+            session.endSession();
+            return swrRes(res);
+        }
+
+        await session.commitTransaction();
+        session.endSession();
+
+        return successRes(res, 201, true, 'Feedback Submitted Successfully.')
+    } catch (error) {
+        await session.abortTransaction();
+        session.endSession();
+        return catchRes(res, error)
+    }
+}
