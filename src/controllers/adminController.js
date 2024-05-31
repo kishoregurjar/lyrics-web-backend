@@ -81,7 +81,7 @@ module.exports.forgetPassword = async (req, res) => {
       },
       process.env.JWT_SECRET,
       {
-        expiresIn: "2m",
+        expiresIn: "5m",
       }
     );
 
@@ -179,6 +179,33 @@ module.exports.changePassword = async (req, res) => {
     return successRes(res, 200, true, "Password has been Changed Successfully");
   } catch (error) {
     console.error("Error Changing Password:", error);
+    return catchRes(res, error);
+  }
+};
+
+module.exports.editAdminProfile = async (req, res) => {
+  try {
+    const adminId = req.user._id;
+    const { fullName, email, mobile } = req.body;
+
+    if (!fullName || !email || !mobile) {
+      return successRes(res, 400, false, "All Fields are Required.");
+    }
+
+    const existingAdmin = await Admin.findById(adminId);
+    if (!existingAdmin) {
+      return successRes(res, 404, false, "Admin Not Found");
+    }
+
+    if (fullName) existingAdmin.fullName = fullName;
+    if (email) existingAdmin.email = email;
+    if (mobile) existingAdmin.mobile = mobile;
+
+    await existingAdmin.save();
+
+    return successRes(res, 200, true, "Profile Updated Successfully");
+  } catch (error) {
+    console.error("Error updating profile:", error);
     return catchRes(res, error);
   }
 };

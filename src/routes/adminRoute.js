@@ -6,6 +6,7 @@ const {
   validateForgetPassword,
   validateResetPassword,
   validateChangePassword,
+  validateEditAdminProfile,
 } = require("../middlewares/adminValidation");
 const { verifyAdminToken } = require("../middlewares/authMiddleware");
 
@@ -44,6 +45,14 @@ router.put(
   validateChangePassword,
   handleValidationErrors,
   controller.adminController.changePassword
+);
+
+router.put(
+  "/edit-admin-profile",
+  verifyAdminToken,
+  validateEditAdminProfile,
+  handleValidationErrors,
+  controller.adminController.editAdminProfile
 );
 
 module.exports = router;

@@ -70,6 +70,24 @@ exports.validateChangePassword = [
     ),
 ];
 
+exports.validateEditAdminProfile = [
+  check("fullName")
+    .trim()
+    .isLength({ min: 2, max: 30 })
+    .withMessage("Full name must be between 2 and 30 characters long"),
+  check("email")
+    .trim()
+    .isEmail()
+    .withMessage("Invalid Email Address")
+    .normalizeEmail(),
+  check("mobile")
+    .trim()
+    .isLength({ min: 10, max: 10 })
+    .withMessage("Mobile number must be a 10-digit number")
+    .matches(/^[0-9]{10}$/)
+    .withMessage("Mobile number must be a valid 10-digit number"),
+];
+
 // Middleware Function to Handle Validation Errors
 exports.handleValidationErrors = (req, res, next) => {
   const errors = validationResult(req);
