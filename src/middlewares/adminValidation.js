@@ -17,7 +17,7 @@ exports.validateAdminLogin = [
     .notEmpty()
     .withMessage("Password must be Required")
     .isLength({ min: 8 })
-    .withMessage("Password must be at least 8 characters long")
+    .withMessage("Password must be at least 8 Characters long")
     .matches(passwordRegex)
     .withMessage(
       "Password must contain at least a lowercase letter, uppercase letter & number"
@@ -53,7 +53,24 @@ exports.validateResetPassword = [
     ),
 ];
 
-// Middleware function to handle validation errors
+exports.validateChangePassword = [
+  check("currentPassword")
+    .trim()
+    .notEmpty()
+    .withMessage("Current password is required"),
+  check("newPassword")
+    .trim()
+    .notEmpty()
+    .withMessage("New Password is Required")
+    .isLength({ min: 8 })
+    .withMessage("Password Must be at least 8 Characters long")
+    .matches(passwordRegex)
+    .withMessage(
+      "Password must contain at least one lowercase letter, one uppercase letter, one digit, and one special character"
+    ),
+];
+
+// Middleware Function to Handle Validation Errors
 exports.handleValidationErrors = (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
