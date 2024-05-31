@@ -1,6 +1,6 @@
 const { assignJwt } = require("../middlewares/authMiddleware");
 const User = require("../models/userModel");
-const { catchRes, successRes, SwrRes } = require("../utils/response");
+const { catchRes, successRes, SwrRes, swrRes } = require("../utils/response");
 const bcrypt = require('bcryptjs');
 const mongoose = require('mongoose');
 const { genericMail } = require("../utils/sendMail");
@@ -209,6 +209,68 @@ module.exports.changePassword = async (req, res) => {
         session.endSession();
 
         return successRes(res, 200, true, "Password updated successfully.");
+    } catch (error) {
+        await session.abortTransaction();
+        session.endSession();
+        return catchRes(res, error);
+    }
+};
+
+module.exports.forgetPassword = async (req, res) => {
+    let { email } = req.body
+
+    email = email.toLowerCase();
+    try {
+        const user = await User.findOne({ email });
+        if (!user) {
+            return successRes(res, 404, false, "User not found.");
+        }
+        const token = jwt.sign({ _id: user._id, email }, process.env.JWT_SECRET
+            , { expiresIn: "5m" });
+        const link = `${process.env.FORGET_PASSWORD}/${token}`
+        genericMail(email, user?.firstName, link, "forget");
+        return successRes(res, 200, true, "Password reset link sent to your email");
+
+    } catch (error) {
+        return catchRes(res, error);
+    }
+}
+
+module.exports.resetPassword = async (req, res) => {
+    const session = await mongoose.startSession();
+    session.startTransaction();
+    try {
+        let token = req.body.token;
+        let newPassword = req.body.newPassword;
+
+        let decoded;
+        try {
+            decoded = jwt.verify(token, process.env.JWT_SECRET);
+        } catch (err) {
+            if (err.name === 'TokenExpiredError') {
+                return successRes(res, 401, false, "Link is expired");
+            } else {
+                return successRes(res, 401, false, "Invalid token");
+            }
+        }
+        const user = await User.findById(decoded._id).session(session);
+
+        if (!user) {
+            await session.abortTransaction();
+            session.endSession();
+            return successRes(res, 401, false, "User not found.");
+        }
+        user.password = await bcrypt.hash(newPassword, 12);
+        let updateUser = await user.save({ session });
+        if (!updateUser) {
+            await session.abortTransaction();
+            session.endSession();
+            return swrRes(res);
+        }
+        await session.commitTransaction();
+        session.endSession();
+        return successRes(res, 200, true, "Password updated successfully.");
+
     } catch (error) {
         await session.abortTransaction();
         session.endSession();

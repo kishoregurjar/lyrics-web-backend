@@ -52,6 +52,13 @@ const userEditSchema = Joi.object({
     }),
 });
 
+const forgetPasswordSchema = Joi.object({
+    email: Joi.string().trim().email().required().messages({
+        'string.empty': 'Email is required',
+        'string.email': 'Please enter a valid email address',
+    })
+});
+
 const userChangePasswordSchema = Joi.object({
     oldPassword: Joi.string().trim().required().messages({
         'string.empty': 'Old Password is required',
@@ -79,5 +86,6 @@ module.exports = {
     userLoginSchema,
     userEditSchema,
     userChangePasswordSchema,
+    forgetPasswordSchema,
     validate
 };
