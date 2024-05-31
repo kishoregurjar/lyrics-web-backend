@@ -12,6 +12,7 @@ const { verifyAdminToken } = require("../middlewares/authMiddleware");
 
 const router = express.Router();
 
+/* Auth Routes */
 router.post(
   "/login-admin",
   validateAdminLogin,
@@ -54,5 +55,19 @@ router.put(
   handleValidationErrors,
   controller.adminController.editAdminProfile
 );
+
+/* Admin Access */
+router.get(
+  "/get-user-feedbacks-list",
+  verifyAdminToken,
+  controller.adminController.getUserFeedbacksList
+);
+
+/* Lyrics Routes */
+router.get("/get-lyrics", controller.adminController.getLyrics);
+
+router.get("/get-top-lyrics", controller.adminController.getTopLyrics);
+
+router.get("/get-search-lyrics", controller.adminController.getSearchLyrics);
 
 module.exports = router;
