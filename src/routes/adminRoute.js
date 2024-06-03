@@ -63,6 +63,21 @@ router.get(
   controller.adminController.getUserFeedbacksList
 );
 
+/* Testimonial Routes */
+router.post("/add-testimonial", controller.adminController.addTestimonial);
+
+router.put("/update-testimonial", controller.adminController.updateTestimonial);
+
+router.put(
+  "/delete-testimonial",
+  controller.adminController.deleteTestimonial
+);
+
+router.post(
+  "/get-testimonials-list",
+  controller.adminController.getTestimonialsList
+);
+
 /* Lyrics Routes */
 router.get("/get-lyrics", controller.adminController.getLyrics);
 

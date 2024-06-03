@@ -7,6 +7,7 @@ const jwt = require("jsonwebtoken");
 const { genericMail } = require("../utils/sendMail");
 const { default: axios } = require("axios");
 const Feedback = require("../models/reviewsModel");
+const Testimonial = require("../models/testimonialModel");
 
 /* Auth Section */
 module.exports.adminLogin = async (req, res) => {
@@ -281,11 +282,9 @@ module.exports.getUserFeedbacksList = async (req, res) => {
   try {
     const feedbacks = await Feedback.find().session(session);
 
-    // Commit the transaction
     await session.commitTransaction();
     session.endSession();
 
-    // Return the feedbacks in the response
     return successRes(
       res,
       200,
@@ -294,10 +293,151 @@ module.exports.getUserFeedbacksList = async (req, res) => {
       feedbacks
     );
   } catch (error) {
-    // Abort the transaction in case of an error
     await session.abortTransaction();
     session.endSession();
     console.error("Error Retrieving User Feedbacks:", error);
+    return catchRes(res, error);
+  }
+};
+
+/* Testimonial Section */
+module.exports.addTestimonial = async (req, res) => {
+  const session = await mongoose.startSession();
+  session.startTransaction();
+
+  try {
+    const { fullName, rating, description, avatar } = req.body;
+
+    const newTestimonial = new Testimonial({
+      fullName,
+      rating,
+      description,
+      avatar,
+    });
+
+    const savedTestimonial = await newTestimonial.save({ session });
+
+    await session.commitTransaction();
+    session.endSession();
+
+    return successRes(
+      res,
+      201,
+      true,
+      "Testimonial Created Successfully",
+      savedTestimonial
+    );
+  } catch (error) {
+    await session.abortTransaction();
+    session.endSession();
+    console.error("Error Creating Testimonial:", error);
+    return catchRes(res, error);
+  }
+};
+
+module.exports.updateTestimonial = async (req, res) => {
+  const session = await mongoose.startSession();
+  session.startTransaction();
+  try {
+    const { tid } = req.query;
+    const { fullName, rating, description, avatar } = req.body;
+
+    const updatedTestimonial = await Testimonial.findByIdAndUpdate(
+      tid,
+      { fullName, rating, description, avatar, updatedAt: Date.now() },
+      { new: true, session }
+    );
+
+    if (!updatedTestimonial) {
+      await session.abortTransaction();
+      session.endSession();
+      return successRes(res, 404, false, "Testimonial Not Found");
+    }
+
+    await session.commitTransaction();
+    session.endSession();
+
+    return successRes(
+      res,
+      200,
+      true,
+      "Testimonial Updated Successfully",
+      updatedTestimonial
+    );
+  } catch (error) {
+    await session.abortTransaction();
+    session.endSession();
+    console.error("Error Updating Testimonial:", error);
+    return catchRes(res, error);
+  }
+};
+
+module.exports.deleteTestimonial = async (req, res) => {
+  const session = await mongoose.startSession();
+  session.startTransaction();
+  try {
+    const { tid } = req.query;
+
+    const deletedTestimonial = await Testimonial.findByIdAndUpdate(
+      tid,
+      { deletedAt: Date.now() },
+      { new: true, session }
+    );
+
+    if (!deletedTestimonial) {
+      await session.abortTransaction();
+      session.endSession();
+      return successRes(res, 404, false, "Testimonial Not Found");
+    }
+
+    await session.commitTransaction();
+    session.endSession();
+
+    return successRes(
+      res,
+      200,
+      true,
+      "Testimonial Soft Deleted Successfully",
+      deletedTestimonial
+    );
+  } catch (error) {
+    await session.abortTransaction();
+    session.endSession();
+    console.error("Error Soft Deleting Testimonial:", error);
+    return catchRes(res, error);
+  }
+};
+
+module.exports.getTestimonialsList = async (req, res) => {
+  const session = await mongoose.startSession();
+  session.startTransaction();
+
+  try {
+    const { fullName, rating, description, avatar } = req.body;
+
+    const newTestimonial = new Testimonial({
+      fullName,
+      rating,
+      description,
+      avatar,
+    });
+
+    const savedTestimonial = await newTestimonial.save({ session });
+
+    await session.commitTransaction();
+    session.endSession();
+
+    return successRes(
+      res,
+      201,
+      true,
+      "Testimonial Created Successfully",
+      savedTestimonial
+    );
+  } catch (error) {
+    await session.abortTransaction();
+    session.endSession();
+    console.error("Error Creating Testimonial:", error);
     return catchRes(res, error);
   }
 };
