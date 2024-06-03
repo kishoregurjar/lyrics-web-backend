@@ -6,6 +6,7 @@ const mongoose = require('mongoose');
 const { genericMail } = require("../utils/sendMail");
 const jwt = require('jsonwebtoken');
 const Feedback = require("../models/reviewsModel");
+const Testimonial = require("../models/testimonialModel");
 
 module.exports.createUser = async (req, res, next) => {
     let { firstName, lastName, email, password, mobile } = req.body;
@@ -311,3 +312,15 @@ module.exports.submitFeedBack = async (req, res) => {
         return catchRes(res, error)
     }
 }
+
+module.exports.getTestimonial = async (req, res) => {
+    try {
+        let testimonialData = await Testimonial.find();
+        if (!testimonialData || testimonialData.length === 0) {
+            return successRes(res, 200, false, 'Empty Testimonial List', []);
+        }
+        return successRes(res, 200, true, 'Testimonial List', testimonialData);
+    } catch (error) {
+        return catchRes(res, error);
+    }
+};

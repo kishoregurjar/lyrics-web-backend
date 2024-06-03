@@ -4,12 +4,7 @@ const { verifyUserToken } = require('../middlewares/authMiddleware');
 const { validate, userSignupSchema, userLoginSchema, userEditSchema, userChangePasswordSchema, forgetPasswordSchema, userResetPasswordSchema, userFeedbackValidation } = require('../middlewares/userValidation');
 const router = express.Router();
 
-
-
-module.exports = validate;
-
-
-
+//======================= Auth ==============================/
 router.post('/create-user', validate(userSignupSchema), controller.userController.createUser)
 router.post('/login-user', validate(userLoginSchema), controller.userController.loginUser)
 router.get('/user-profile', verifyUserToken, controller.userController.showUserProfile)
@@ -18,6 +13,13 @@ router.put('/edit-user', validate(userEditSchema), verifyUserToken, controller.u
 router.put('/change-user-password', validate(userChangePasswordSchema), verifyUserToken, controller.userController.changePassword)
 router.post('/forget-password', validate(forgetPasswordSchema), controller.userController.forgetPassword)
 router.put('/reset-password', validate(userResetPasswordSchema), controller.userController.resetPassword)
+
+//======================Feedback ================================//
+
 router.post('/submit-user-feedback', validate(userFeedbackValidation), controller.userController.submitFeedBack)
+
+//===================== Get Testimonial ========================//
+
+router.get('/get-testimonial', controller.userController.getTestimonial)
 
 module.exports = router
