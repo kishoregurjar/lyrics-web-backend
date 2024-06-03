@@ -7,78 +7,89 @@ const {
   validateResetPassword,
   validateChangePassword,
   validateEditAdminProfile,
+  validateAddTestimonial,
+  validateUpdateTestimonial,
 } = require("../middlewares/adminValidation");
 const { verifyAdminToken } = require("../middlewares/authMiddleware");
 
 const router = express.Router();
 
-/* Auth Routes */
+// Helper function to apply validation middlewares
+const validation = (validations) => [...validations, handleValidationErrors];
+
+// Admin Authentication Routes
 router.post(
   "/login-admin",
-  validateAdminLogin,
-  handleValidationErrors,
+  validation([validateAdminLogin]),
   controller.adminController.adminLogin
-);
-
-router.get(
-  "/admin-profile",
-  verifyAdminToken,
-  controller.adminController.showAdminProfile
 );
 
 router.post(
   "/forget-password",
-  validateForgetPassword,
-  handleValidationErrors,
+  validation([validateForgetPassword]),
   controller.adminController.forgetPassword
 );
 
 router.put(
   "/reset-password",
-  validateResetPassword,
-  handleValidationErrors,
+  validation([validateResetPassword]),
   controller.adminController.resetPassword
 );
 
-router.put(
+// Sub-router for routes requiring admin token verification
+const protectedRoute = express.Router();
+
+protectedRoute.use(verifyAdminToken);
+
+protectedRoute.put(
   "/change-password",
-  verifyAdminToken,
-  validateChangePassword,
-  handleValidationErrors,
+  validation([validateChangePassword]),
   controller.adminController.changePassword
 );
 
-router.put(
+protectedRoute.put(
   "/edit-admin-profile",
-  verifyAdminToken,
-  validateEditAdminProfile,
-  handleValidationErrors,
+  validation([validateEditAdminProfile]),
   controller.adminController.editAdminProfile
 );
 
-/* Admin Access */
-router.get(
+protectedRoute.get(
+  "/admin-profile",
+  controller.adminController.showAdminProfile
+);
+
+protectedRoute.get(
   "/get-user-feedbacks-list",
-  verifyAdminToken,
   controller.adminController.getUserFeedbacksList
 );
 
-/* Testimonial Routes */
-router.post("/add-testimonial", controller.adminController.addTestimonial);
+// Testimonial Routes
+protectedRoute.post(
+  "/add-testimonial",
+  validation([validateAddTestimonial]),
+  controller.adminController.addTestimonial
+);
 
-router.put("/update-testimonial", controller.adminController.updateTestimonial);
+protectedRoute.put(
+  "/update-testimonial",
+  validation([validateUpdateTestimonial]),
+  controller.adminController.updateTestimonial
+);
 
-router.put(
+protectedRoute.put(
   "/delete-testimonial",
   controller.adminController.deleteTestimonial
 );
 
-router.post(
+protectedRoute.get(
   "/get-testimonials-list",
   controller.adminController.getTestimonialsList
 );
 
-/* Lyrics Routes */
+// Use the protectedRoute for all routes that require admin verification
+router.use(protectedRoute);
+
+// Lyrics Routes
 router.get("/get-lyrics", controller.adminController.getLyrics);
 
 router.get("/get-top-lyrics", controller.adminController.getTopLyrics);

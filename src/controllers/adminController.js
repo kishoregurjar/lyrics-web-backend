@@ -409,35 +409,38 @@ module.exports.deleteTestimonial = async (req, res) => {
 };
 
 module.exports.getTestimonialsList = async (req, res) => {
-  const session = await mongoose.startSession();
-  session.startTransaction();
-
   try {
-    const { fullName, rating, description, avatar } = req.body;
+    // Extract query parameters for pagination, sorting, and filtering
+    const {
+      page = 1,
+      limit = 10,
+      sortBy = "createdAt",
+      sortOrder = "desc",
+    } = req.query;
+    const skip = (page - 1) * limit;
 
-    const newTestimonial = new Testimonial({
-      fullName,
-      rating,
-      description,
-      avatar,
+    // Filter to include testimonials where deletedAt is null or does not exist
+    const filter = {
+      $or: [{ deletedAt: null }, { deletedAt: { $exists: false } }],
+    };
+
+    // Find testimonials with pagination and sorting
+    const testimonials = await Testimonial.find(filter)
+      .sort({ [sortBy]: sortOrder === "desc" ? -1 : 1 })
+      .skip(parseInt(skip))
+      .limit(parseInt(limit));
+
+    // Count the total number of testimonials for pagination
+    const totalTestimonials = await Testimonial.countDocuments(filter);
+
+    return successRes(res, 200, true, "Testimonials List", {
+      testimonials,
+      totalTestimonials,
+      currentPage: parseInt(page),
+      totalPages: Math.ceil(totalTestimonials / limit),
     });
-
-    const savedTestimonial = await newTestimonial.save({ session });
-
-    await session.commitTransaction();
-    session.endSession();
-
-    return successRes(
-      res,
-      201,
-      true,
-      "Testimonial Created Successfully",
-      savedTestimonial
-    );
   } catch (error) {
-    await session.abortTransaction();
-    session.endSession();
-    console.error("Error Creating Testimonial:", error);
+    console.error("Error Getting Testimonials List:", error);
     return catchRes(res, error);
   }
 };
@@ -445,11 +448,11 @@ module.exports.getTestimonialsList = async (req, res) => {
 /* Lyrics Section */
 module.exports.getLyrics = async (req, res) => {
   try {
-    const { artist, track } = req.query;
+    // const { artist, track } = req.query;
 
-    if (!artist || !track) {
-      return successRes(res, 400, false, "Artist and Track are required.");
-    }
+    // if (!artist || !track) {
+    //   return successRes(res, 400, false, "Artist and Track are required.");
+    // }
 
     // LyricFind API details
     const apiType = "https://api.lyricfind.com/lyric.do";
