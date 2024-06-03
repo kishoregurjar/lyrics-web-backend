@@ -92,7 +92,23 @@ const jwt = {
         });
       }
 
-      const decoded = jsonwebtoken.verify(token, SECRET_KEY);
+      let decoded;
+      try {
+        decoded = jsonwebtoken.verify(token, SECRET_KEY);
+      } catch (err) {
+        if (err.name === "TokenExpiredError") {
+          return res
+            .status(401)
+            .json({
+              success: false,
+              message: "Session timeout: Please login again",
+            });
+        }
+        return res
+          .status(401)
+          .json({ success: false, message: "Access Denied: Invalid Token" });
+      }
+
       if (!decoded) {
         return res
           .status(401)
