@@ -11,6 +11,7 @@ const {
   validateUpdateTestimonial,
 } = require("../middlewares/adminValidation");
 const { verifyAdminToken } = require("../middlewares/authMiddleware");
+const { uploadSingleFile } = require("../utils/multer");
 
 const router = express.Router();
 
@@ -34,6 +35,15 @@ router.put(
   "/reset-password",
   validation([validateResetPassword]),
   controller.adminController.resetPassword
+);
+
+router.post(
+  "/upload-profile-picture",
+  uploadSingleFile("profilePicture", {
+    fileTypes: /jpeg|jpg|png/,
+    folder: "uploads/profile_pictures",
+  }),
+  controller.adminController.uploadProfilePicture
 );
 
 // Sub-router for routes requiring admin token verification

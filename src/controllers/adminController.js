@@ -60,7 +60,7 @@ module.exports.showAdminProfile = async (req, res) => {
     const adminId = req.user._id;
 
     const existingAdmin = await Admin.findById(adminId)
-      .select("fullName email role")
+      .select("fullName email role mobile")
       .session(session);
     if (!existingAdmin) {
       await session.abortTransaction();
@@ -271,6 +271,40 @@ module.exports.editAdminProfile = async (req, res) => {
     session.endSession();
     console.error("Error updating profile:", error);
     return catchRes(res, error);
+  }
+};
+
+module.exports.uploadProfilePicture = async (req, res) => {
+  if (!req.file) {
+    return res
+      .status(400)
+      .json({ success: false, message: "No file uploaded" });
+  }
+
+  const adminId = req.admin.id; // Assumes admin id is stored in the token and set in req.admin
+  const filePath = `/uploads/profile_pictures/${req.file.filename}`;
+
+  try {
+    const admin = await Admin.findByIdAndUpdate(
+      adminId,
+      { profilePicture: filePath },
+      { new: true }
+    );
+
+    if (!admin) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Admin not found" });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "Profile picture uploaded successfully",
+      data: admin,
+    });
+  } catch (error) {
+    console.error("Error updating profile picture:", error);
+    res.status(500).json({ success: false, message: "Server Error" });
   }
 };
 
