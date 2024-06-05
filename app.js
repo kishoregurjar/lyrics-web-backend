@@ -22,7 +22,9 @@ const limiter = rateLimit({
 app.use(limiter);
 app.use(compression());
 
-app.use(cors());
+app.use(cors({
+  origin: '*'
+}));
 app.use(helmet());
 app.use(express.json());
 app.use(
