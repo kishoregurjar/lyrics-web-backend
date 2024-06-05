@@ -74,7 +74,7 @@ const userResetPasswordSchema = Joi.object({
         'string.empty': 'New Password is required',
         'string.pattern.base': 'Password must have at least one uppercase letter, one lowercase letter, one digit, one special character, and be at least 8 characters long',
     }),
-    token: Joi.string().trim().required()
+    resetToken: Joi.string().trim().required()
 });
 
 const userFeedbackValidation = Joi.object({
