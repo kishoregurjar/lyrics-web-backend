@@ -3,6 +3,7 @@ const { catchRes, successRes, swrRes } = require("../utils/response");
 const mongoose = require("mongoose");
 const axios = require('axios');
 const hotAlbmubModel = require("../models/hotAlbmubModel");
+const xml2js = require('xml2js');
 
 async function getAccessToken() {
     const { SPOTIFY_CLIENT_ID, SPOTIFY_CLIENT_SECRET } = process.env;
@@ -37,7 +38,7 @@ module.exports.addHotSong = async (req, res) => {
 
         const checkLimit = await hotAlbmubModel.find().count();
         if (checkLimit >= 8) {
-            return successRes(res, 400, false, "Can not add more than 8 Hot songs")
+            return successRes(res, 400, false, "Can not add more than 8 Hot songs");
         }
 
         const accessToken = await getAccessToken();
@@ -63,6 +64,7 @@ module.exports.addHotSong = async (req, res) => {
         }
 
         const track = searchResponse.data.tracks.items[0];
+        const territory = track.available_markets ? track.available_markets.join(', ') : 'Unknown';
 
         const newHotAlbum = new hotAlbmubModel({
             images: track.album.images.map(image => image.url),
@@ -73,7 +75,8 @@ module.exports.addHotSong = async (req, res) => {
             album: track.album.name,
             genre: track.album.genres ? track.album.genres.join(', ') : 'Unknown',
             duration: track.duration_ms,
-            spotifyUrl: track.external_urls.spotify
+            spotifyUrl: track.external_urls.spotify,
+            territory: territory  // Added territory field
         });
 
         let saveAlbum = await newHotAlbum.save();
@@ -93,6 +96,7 @@ module.exports.addHotSong = async (req, res) => {
         return catchRes(res, error);
     }
 };
+
 
 module.exports.getHotSongList = async (req, res) => {
     try {
@@ -177,3 +181,48 @@ module.exports.searchSong = async (req, res) => {
         return catchRes(res, error);
     }
 };
+
+module.exports.getLyricsAdmin = async (req, res) => {
+    try {
+        const { isrcKey, territory = 'IN' } = req.body;
+
+        const apiKey = process.env.LF_API_KEY || '5f99ebb429f9d2b9e13998f93943b34a'; // Use environment variable
+        const url = `https://api.lyricfind.com/lyric.do?apikey=${apiKey}&territory=${territory}&reqtype=default&trackid=isrc:${isrcKey}`;
+
+        const response = await axios.get(url);
+        const xmlData = response.data;
+
+        // Parse XML to JavaScript object
+        const parser = new xml2js.Parser();
+        const jsonData = await parser.parseStringPromise(xmlData);
+
+        // Check if the response contains the expected structure
+        if (!jsonData || !jsonData.lyricfind || !jsonData.lyricfind.track || jsonData.lyricfind.track.length === 0) {
+            throw new Error('Invalid response from LyricFind API');
+        }
+
+        // Extract song details
+        const track = jsonData.lyricfind.track[0];
+        let lyrics = track.lyrics[0];
+
+        // Replace newline characters with HTML line break tags
+        lyrics = lyrics.replace(/\n/g, '<br>');
+
+        const resObj = {
+            title: track?.title[0],
+            artist: track?.artists[0].artist[0]["_"],
+            lyrics: lyrics
+        };
+
+        return res.send(resObj);
+
+    } catch (error) {
+        console.error('Error fetching song details:', error.message);
+        res.status(500).send({ error: error.message });
+    }
+};
+
+
+
+
+

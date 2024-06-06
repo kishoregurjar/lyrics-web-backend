@@ -10,6 +10,7 @@ const hotAlbumSchema = new mongoose.Schema({
     genre: { type: String },
     duration: { type: Number },
     spotifyUrl: { type: String },
+    territory: { type: String },
     createdAt: { type: Date, default: Date.now }
 });
 

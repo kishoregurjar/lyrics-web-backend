@@ -97,6 +97,7 @@ protectedRoute.get(
 );
 
 
+router.get('/get-lyrics', controller.lyricsController.getLyricsAdmin)
 // Use the protectedRoute for all routes that require admin verification
 router.use(protectedRoute);
 
