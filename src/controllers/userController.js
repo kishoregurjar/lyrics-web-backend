@@ -329,3 +329,63 @@ module.exports.getTestimonial = async (req, res) => {
     return catchRes(res, error);
   }
 };
+
+
+
+// const axios = require('axios');
+
+// async function getAccessToken() {
+//   const { SPOTIFY_CLIENT_ID, SPOTIFY_CLIENT_SECRET } = process.env;
+//   const token = Buffer.from(`${SPOTIFY_CLIENT_ID}:${SPOTIFY_CLIENT_SECRET}`).toString('base64');
+
+//   const response = await axios.post('https://accounts.spotify.com/api/token', 'grant_type=client_credentials', {
+//     headers: {
+//       'Authorization': `Basic ${token}`,
+//       'Content-Type': 'application/x-www-form-urlencoded'
+//     }
+//   });
+
+//   return response.data.access_token;
+// }
+
+// async function getTrackISRCByName(trackName) {
+//   const accessToken = await getAccessToken();
+
+//   const searchResponse = await axios.get('https://api.spotify.com/v1/search', {
+//     headers: {
+//       'Authorization': `Bearer ${accessToken}`
+//     },
+//     params: {
+//       q: trackName,
+//       type: 'track',
+//       limit: 1
+//     }
+//   });
+
+//   if (searchResponse.data.tracks.items.length === 0) {
+//     throw new Error('Track not found');
+//   }
+//   // console.log(searchResponse.data.tracks, "11111111")
+//   const trackId = searchResponse.data.tracks.items[0].id;
+
+//   const trackResponse = await axios.get(`https://api.spotify.com/v1/tracks/${trackId}`, {
+//     headers: {
+//       'Authorization': `Bearer ${accessToken}`
+//     }
+//   });
+
+//   const track = trackResponse.data;
+//   console.log(track.album, "track")
+//   return track.external_ids.isrc;
+// }
+
+// (async () => {
+//   try {
+//     const trackName = 'vande matram';
+//     const isrc = await getTrackISRCByName(trackName);
+//     console.log(`ISRC: ${isrc}`);
+//   } catch (error) {
+//     console.error('Error fetching ISRC:', error);
+//   }
+// })();
+

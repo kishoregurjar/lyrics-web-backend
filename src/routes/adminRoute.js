@@ -96,6 +96,7 @@ protectedRoute.get(
   controller.adminController.getTestimonialsList
 );
 
+
 // Use the protectedRoute for all routes that require admin verification
 router.use(protectedRoute);
 
@@ -105,5 +106,11 @@ router.get("/get-lyrics", controller.adminController.getLyrics);
 router.get("/get-top-lyrics", controller.adminController.getTopLyrics);
 
 router.get("/get-search-lyrics", controller.adminController.getSearchLyrics);
+
+// =============      Add hot albumbs =====================/
+
+router.post('/add-hot-album', controller.lyricsController.addHotSong)
+router.get('/get-hot-album', controller.lyricsController.getHotSongList)
+
 
 module.exports = router;
