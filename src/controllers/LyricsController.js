@@ -105,3 +105,45 @@ module.exports.getHotSongList = async (req, res) => {
         return catchRes(res, error);
     }
 }
+
+module.exports.deleteHotSong = async (req, res) => {
+    try {
+
+    } catch (error) {
+
+    }
+}
+
+module.exports.searchSong = async (req, res) => {
+    try {
+        const { query } = req.query;
+
+        const accessToken = await getAccessToken();
+        if (!accessToken) {
+            return res.status(500).json({ error: 'Failed to retrieve access token' });
+        }
+
+        const response = await axios.get('https://api.spotify.com/v1/search', {
+            headers: {
+                'Authorization': `Bearer ${accessToken}`
+            },
+            params: {
+                q: query,
+                type: 'track',
+                limit: 10
+            }
+        });
+
+        const tracks = response.data.tracks.items.map(track => ({
+            name: track.name,
+            id: track.id,
+            isrc: track.external_ids.isrc,
+            artist: track.artists[0].name,
+            image: track.album.images.length > 0 ? track.album.images[0].url : null
+        }));
+
+        res.json(tracks);
+    } catch (error) {
+        return catchRes(res, error);
+    }
+};
