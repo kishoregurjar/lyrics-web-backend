@@ -20,14 +20,13 @@ async function getAccessToken() {
 }
 
 module.exports.addHotSong = async (req, res) => {
-
     let { _id } = req.user;
+
     const session = await mongoose.startSession();
     session.startTransaction();
-    try {
 
-        const { trackName } = req.body;
-        console.log(trackName, "name")
+    try {
+        const { isrcKey } = req.body;
 
         const findAdmin = await Admin.findById(_id).session(session);
         if (!findAdmin) {
@@ -36,20 +35,26 @@ module.exports.addHotSong = async (req, res) => {
             return successRes(res, 401, false, "Admin Not Found");
         }
 
+        const checkLimit = await hotAlbmubModel.find().count();
+        if (checkLimit >= 8) {
+            return successRes(res, 400, false, "Can not add more than 8 Hot songs")
+        }
+
         const accessToken = await getAccessToken();
         if (!accessToken) {
             await session.abortTransaction();
             session.endSession();
             return swrRes(res);
         }
+
         const searchResponse = await axios.get('https://api.spotify.com/v1/search', {
             headers: {
                 'Authorization': `Bearer ${accessToken}`
             },
             params: {
-                q: trackName,
+                q: `isrc:${isrcKey}`,
                 type: 'track',
-                limit: 5
+                limit: 1
             }
         });
 
@@ -77,6 +82,7 @@ module.exports.addHotSong = async (req, res) => {
             session.endSession();
             return swrRes(res);
         }
+
         await session.commitTransaction();
         session.endSession();
         return successRes(res, 201, true, 'Hot song added successfully', newHotAlbum);
@@ -96,7 +102,8 @@ module.exports.getHotSongList = async (req, res) => {
             return successRes(res, 401, false, "Admin Not Found");
         }
 
-        const findHotSongs = await hotAlbmubModel.find()
+        const findHotSongs = await hotAlbmubModel.find().sort({ createdAt: -1 });
+
         if (!findHotSongs) {
             return successRes(res, 200, false, "Empty Hot Song List", [])
         }
@@ -107,10 +114,33 @@ module.exports.getHotSongList = async (req, res) => {
 }
 
 module.exports.deleteHotSong = async (req, res) => {
+    const { _id } = req.user
+    const session = await mongoose.startSession();
+    session.startTransaction();
     try {
+        const { hotAlbumId } = req.body;
 
+        const findAdmin = await Admin.findById(_id).session(session);
+        if (!findAdmin) {
+            await session.abortTransaction();
+            session.endSession();
+            return successRes(res, 401, false, "Admin Not Found");
+        }
+
+        const findAndDeleteSong = await hotAlbmubModel.findOneAndDelete({ _id: hotAlbumId })
+        if (!findAndDeleteSong) {
+            await session.abortTransaction();
+            session.endSession();
+            return swrRes(res);
+        }
+
+        await session.commitTransaction();
+        session.endSession();
+        return successRes(res, 200, true, "Album Deleted Successfully", null)
     } catch (error) {
-
+        await session.abortTransaction();
+        session.endSession();
+        return catchRes(res, error);
     }
 }
 
