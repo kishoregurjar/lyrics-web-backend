@@ -23,7 +23,7 @@ app.use(limiter);
 app.use(compression());
 
 app.use(cors({
-  origin: '*'
+  origin: 'http://localhost:3000'
 }));
 app.use(helmet());
 app.use(express.json());
