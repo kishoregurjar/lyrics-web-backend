@@ -46,7 +46,7 @@ router.post(
   controller.adminController.uploadProfilePicture
 );
 
-router.get('/get-admin-lyrics/:isrcKey', controller.lyricsController.getLyricsAdmin)
+router.post('/get-admin-lyrics', controller.lyricsController.getLyricsAdmin)
 
 
 // Sub-router for routes requiring admin token verification

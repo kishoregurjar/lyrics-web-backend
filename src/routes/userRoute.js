@@ -22,4 +22,10 @@ router.post('/submit-user-feedback', validate(userFeedbackValidation), controlle
 
 router.get('/get-testimonial', controller.userController.getTestimonial)
 
+// ====================== Search Everthing ====================//
+
+router.post('/search', controller.lyricsController.searchSAA)
+router.post('/artist/song', controller.lyricsController.artistSong)
+router.post('/get-lyrics-user', controller.lyricsController.getLyricsUser)
+
 module.exports = router

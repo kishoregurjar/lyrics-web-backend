@@ -148,6 +148,7 @@ module.exports.deleteHotSong = async (req, res) => {
     }
 }
 
+//for admin panel
 module.exports.searchSong = async (req, res) => {
     try {
         const { query } = req.query;
@@ -168,6 +169,8 @@ module.exports.searchSong = async (req, res) => {
             }
         });
 
+        // console.log(response.data, "response")
+
         const tracks = response.data.tracks.items.map(track => ({
             name: track.name,
             id: track.id,
@@ -176,7 +179,11 @@ module.exports.searchSong = async (req, res) => {
             image: track.album.images.length > 0 ? track.album.images[0].url : null
         }));
 
-        res.json(tracks);
+        if (!tracks) {
+            return successRes(res, 404, false, "No songs found", [])
+        }
+        return successRes(res, 200, true, "Songs Lists", tracks)
+
     } catch (error) {
         return catchRes(res, error);
     }
@@ -184,9 +191,7 @@ module.exports.searchSong = async (req, res) => {
 
 module.exports.getLyricsAdmin = async (req, res) => {
     try {
-        console.log(req.user)
-        const { isrcKey } = req.params;
-        console.log(isrcKey, req.params, "111111111")
+        const { isrcKey } = req.body;
         const territory = 'IN'
         const apiKey = process.env.LF_API_KEY || '5f99ebb429f9d2b9e13998f93943b34a'; // Use environment variable
         const url = `https://api.lyricfind.com/lyric.do?apikey=${apiKey}&territory=${territory}&reqtype=default&trackid=isrc:${isrcKey}`;
@@ -195,13 +200,13 @@ module.exports.getLyricsAdmin = async (req, res) => {
 
         const response = await axios.get(url);
         const xmlData = response.data;
-        console.log(xmlData)
+        // console.log(xmlData)
 
         const parser = new xml2js.Parser();
         const jsonData = await parser.parseStringPromise(xmlData);
 
         if (!jsonData || !jsonData.lyricfind || !jsonData.lyricfind.track || jsonData.lyricfind.track.length === 0) {
-            throw new Error('Invalid response from LyricFind API');
+            return successRes(res, 404, false, "No Lyrics Found", null)
         }
 
         const track = jsonData.lyricfind.track[0];
@@ -221,6 +226,141 @@ module.exports.getLyricsAdmin = async (req, res) => {
     }
 };
 
+module.exports.searchSAA = async (req, res) => {
+    const { type, query } = req.body;
+
+    // Validate type parameter
+    const validTypes = ['artist', 'track', 'album'];
+    if (!validTypes.includes(type)) {
+        return res.status(400).json({ success: false, message: 'Invalid search type' });
+    }
+
+    try {
+        const accessToken = await getAccessToken();
+        if (!accessToken) {
+            return res.status(500).json({ success: false, message: 'Failed to get access token' });
+        }
+
+        const searchResponse = await axios.get('https://api.spotify.com/v1/search', {
+            headers: {
+                'Authorization': `Bearer ${accessToken}`
+            },
+            params: {
+                q: query,
+                type: type,
+                limit: 10
+            }
+        });
+
+        return res.status(200).json({ success: true, data: searchResponse.data });
+
+    } catch (error) {
+        console.error('Error searching Spotify API:', error);
+        return res.status(500).json({ success: false, message: 'Internal Server Error' });
+    }
+}
+
+//in this we will get all songs list of particular artist but isrc will not come in response so we will need to fetch isrc on particular track id
+module.exports.artistSong = async (req, res) => {
+    const { artistId } = req.body;
+
+    if (!artistId) {
+        return res.status(400).json({ success: false, message: 'Artist ID is required' });
+    }
+
+    try {
+        const accessToken = await getAccessToken();
+        if (!accessToken) {
+            return res.status(500).json({ success: false, message: 'Failed to get access token' });
+        }
+
+        const albumsResponse = await axios.get(`https://api.spotify.com/v1/artists/${artistId}/albums`, {
+            headers: {
+                'Authorization': `Bearer ${accessToken}`
+            },
+            params: {
+                include_groups: 'album,single',
+                limit: 50
+            }
+        });
+
+        const albums = albumsResponse.data.items;
+
+        let tracks = [];
+        for (const album of albums) {
+            const albumTracksResponse = await axios.get(`https://api.spotify.com/v1/albums/${album.id}/tracks`, {
+                headers: {
+                    'Authorization': `Bearer ${accessToken}`
+                },
+                params: {
+                    limit: 50
+                }
+            });
+            tracks = tracks.concat(albumTracksResponse.data.items);
+        }
+
+        return res.status(200).json({ success: true, data: tracks });
+
+    } catch (error) {
+        console.error('Error fetching artist songs:', error);
+        return res.status(500).json({ success: false, message: 'Internal Server Error' });
+    }
+}
+
+module.exports.getLyricsUser = async (req, res) => {
+    try {
+        const { key } = req.body;
+        let isrcKey;
+        if (key.length == 22) {
+            isrcKey = await getISRC(key)
+        } else {
+            isrcKey = key
+        }
+        console.log(isrcKey, "isrckey")
+        const territory = 'IN'
+        const apiKey = process.env.LF_API_KEY || '5f99ebb429f9d2b9e13998f93943b34a'; // Use environment variable
+        const url = `https://api.lyricfind.com/lyric.do?apikey=${apiKey}&territory=${territory}&reqtype=default&trackid=isrc:${isrcKey}`;
+
+        console.log(url, "url")
+
+        const response = await axios.get(url);
+        const xmlData = response.data;
+        console.log(xmlData)
+
+        const parser = new xml2js.Parser();
+        const jsonData = await parser.parseStringPromise(xmlData);
+
+        if (!jsonData || !jsonData.lyricfind || !jsonData.lyricfind.track || jsonData.lyricfind.track.length === 0) {
+            return successRes(res, 404, false, "No Lyrics Found", null)
+        }
+
+        const track = jsonData.lyricfind.track[0];
+        let lyrics = track.lyrics[0];
+
+        const resObj = {
+            title: track?.title[0],
+            artist: track?.artists[0].artist[0]["_"],
+            lyrics: lyrics
+        };
+
+        return successRes(res, 200, true, "Lyrics fectched Successfully", resObj)
+
+    } catch (error) {
+        console.error('Error fetching song details:', error.message);
+        res.status(500).send({ error: error.message });
+    }
+};
+
+const getISRC = async (trackId) => {
+    const accessToken = await getAccessToken();
+    const trackUrl = `https://api.spotify.com/v1/tracks/${trackId}`;
+    const response = await axios.get(trackUrl, {
+        headers: {
+            'Authorization': `Bearer ${accessToken}`
+        }
+    });
+    return response.data.external_ids.isrc;
+}
 
 
 
