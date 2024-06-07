@@ -46,6 +46,9 @@ router.post(
   controller.adminController.uploadProfilePicture
 );
 
+router.get('/get-admin-lyrics/:isrcKey', controller.lyricsController.getLyricsAdmin)
+
+
 // Sub-router for routes requiring admin token verification
 const protectedRoute = express.Router();
 
@@ -96,8 +99,6 @@ protectedRoute.get(
   controller.adminController.getTestimonialsList
 );
 
-
-router.get('/get-lyrics', controller.lyricsController.getLyricsAdmin)
 // Use the protectedRoute for all routes that require admin verification
 router.use(protectedRoute);
 

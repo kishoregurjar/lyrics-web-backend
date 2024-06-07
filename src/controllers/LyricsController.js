@@ -184,29 +184,28 @@ module.exports.searchSong = async (req, res) => {
 
 module.exports.getLyricsAdmin = async (req, res) => {
     try {
-        const { isrcKey, territory = 'IN' } = req.body;
-
+        console.log(req.user)
+        const { isrcKey } = req.params;
+        console.log(isrcKey, req.params, "111111111")
+        const territory = 'IN'
         const apiKey = process.env.LF_API_KEY || '5f99ebb429f9d2b9e13998f93943b34a'; // Use environment variable
         const url = `https://api.lyricfind.com/lyric.do?apikey=${apiKey}&territory=${territory}&reqtype=default&trackid=isrc:${isrcKey}`;
 
+        console.log(url, "url")
+
         const response = await axios.get(url);
         const xmlData = response.data;
+        console.log(xmlData)
 
-        // Parse XML to JavaScript object
         const parser = new xml2js.Parser();
         const jsonData = await parser.parseStringPromise(xmlData);
 
-        // Check if the response contains the expected structure
         if (!jsonData || !jsonData.lyricfind || !jsonData.lyricfind.track || jsonData.lyricfind.track.length === 0) {
             throw new Error('Invalid response from LyricFind API');
         }
 
-        // Extract song details
         const track = jsonData.lyricfind.track[0];
         let lyrics = track.lyrics[0];
-
-        // Replace newline characters with HTML line break tags
-        lyrics = lyrics.replace(/\n/g, '<br>');
 
         const resObj = {
             title: track?.title[0],
@@ -214,7 +213,7 @@ module.exports.getLyricsAdmin = async (req, res) => {
             lyrics: lyrics
         };
 
-        return res.send(resObj);
+        return successRes(res, 200, true, "Lyrics fectched Successfully", resObj)
 
     } catch (error) {
         console.error('Error fetching song details:', error.message);
