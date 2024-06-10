@@ -25,7 +25,9 @@ router.get('/get-testimonial', controller.userController.getTestimonial)
 // ====================== Search Everthing ====================//
 
 router.post('/search', controller.lyricsController.searchSAA)
-router.post('/artist/song', controller.lyricsController.artistSong)
+router.get('/artist/song', controller.lyricsController.artistSong)
 router.post('/get-lyrics-user', controller.lyricsController.getLyricsUser)
+router.get('/album/songs', controller.lyricsController.getAlbumSong)
+router.post('/search-lyricfind', controller.lyricsController.searchLyricsFindSongs)
 
 module.exports = router

@@ -248,7 +248,7 @@ module.exports.searchSAA = async (req, res) => {
             params: {
                 q: query,
                 type: type,
-                limit: 10
+                limit: 50
             }
         });
 
@@ -262,7 +262,7 @@ module.exports.searchSAA = async (req, res) => {
 
 //in this we will get all songs list of particular artist but isrc will not come in response so we will need to fetch isrc on particular track id
 module.exports.artistSong = async (req, res) => {
-    const { artistId } = req.body;
+    const { artistId, limit, offset } = req.query;
 
     if (!artistId) {
         return res.status(400).json({ success: false, message: 'Artist ID is required' });
@@ -278,34 +278,35 @@ module.exports.artistSong = async (req, res) => {
             headers: {
                 'Authorization': `Bearer ${accessToken}`
             },
-            params: {
-                include_groups: 'album,single',
-                limit: 50
-            }
+            // params: {
+            //     include_groups: 'album',
+            // }
         });
 
         const albums = albumsResponse.data.items;
+        console.log(albumsResponse.data.items)
 
         let tracks = [];
-        for (const album of albums) {
-            const albumTracksResponse = await axios.get(`https://api.spotify.com/v1/albums/${album.id}/tracks`, {
-                headers: {
-                    'Authorization': `Bearer ${accessToken}`
-                },
-                params: {
-                    limit: 50
-                }
-            });
-            tracks = tracks.concat(albumTracksResponse.data.items);
-        }
+        // for (const album of albums) {
+        //     const albumTracksResponse = await axios.get(`https://api.spotify.com/v1/albums/${album.id}/tracks`, {
+        //         headers: {
+        //             'Authorization': `Bearer ${accessToken}`
+        //         },
+        //         params: {
+        //             limit: limit || 10, // Default limit to 10 if not provided
+        //             offset: offset || 0 // Default offset to 0 if not provided
+        //         }
+        //     });
+        //     tracks = tracks.concat(albumTracksResponse.data.items);
+        // }
 
-        return res.status(200).json({ success: true, data: tracks });
+        return res.status(200).json({ success: true, data: albums, total: tracks.length });
 
     } catch (error) {
         console.error('Error fetching artist songs:', error);
         return res.status(500).json({ success: false, message: 'Internal Server Error' });
     }
-}
+};
 
 module.exports.getLyricsUser = async (req, res) => {
     try {
@@ -362,6 +363,60 @@ const getISRC = async (trackId) => {
     return response.data.external_ids.isrc;
 }
 
+module.exports.getAlbumSong = async (req, res) => {
+    try {
+        const { albumId } = req.query
+        console.log(albumId, "111111111")
+        let tracks = [];
+        let accessToken = await getAccessToken();
+        console.log(accessToken)
+        await axios.get(`https://api.spotify.com/v1/albums/${albumId}/tracks`, {
+            headers: {
+                Authorization: `Bearer ${accessToken}`
+            }
+        }).then((response) => {
+            console.log(response.data.items, "response")
+            res.send(response.data.items)
+        }).catch(error => {
+            console.log(error.response)
+        })
+        // console.log(albumTracksResponse, "hello")
+        // tracks = tracks.concat(albumTracksResponse.data.items);
+        // res.send(tracks)
+    } catch (error) {
+        res.status(500).send({ error: error.message });
+    }
+}
+
+// =====================================Lyrics Find Apis=======================================================
+
+//for user
+module.exports.searchLyricsFindSongs = async (req, res) => {
+    const { type, query } = req.body;
+    console.log(type, query)
+
+    const validTypes = ['artist', 'track', 'album'];
+    if (!validTypes.includes(type)) {
+        return res.status(400).json({ success: false, message: 'Invalid search type' });
+    }
+
+    try {
+        const searchResponse = await axios.get(`https://api.lyricfind.com/search.do?apikey=9d2330933c7ca5d0c36aa228f372d87b&territory=IN&reqtype=default&searchtype=${type}&lyrics=${query}`);
+
+        xml2js.parseString(searchResponse.data, { explicitArray: false }, (err, result) => {
+            if (err) {
+                console.error('Error parsing XML:', err);
+                return res.status(500).json({ success: false, message: 'Error parsing response from API' });
+            }
+
+            return res.status(200).json({ success: true, data: result });
+        });
+
+    } catch (error) {
+        console.error('Error searching LyricFind API:', error);
+        return res.status(500).json({ success: false, message: 'Internal Server Error' });
+    }
+}
 
 
 
