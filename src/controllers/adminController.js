@@ -501,6 +501,23 @@ module.exports.addNews = async (req, res) => {
       return successRes(res, 404, false, "Admin Not Found");
     }
 
+    // Check the number of existing news entries
+    const filter = {
+      $or: [{ deletedAt: null }, { deletedAt: { $exists: false } }],
+    };
+    const newsCount = await News.countDocuments(filter).session(session);
+
+    // Restrict to a maximum of 10 news entries
+    if (newsCount >= 10) {
+      await session.abortTransaction();
+      return successRes(
+        res,
+        400,
+        false,
+        "Maximum limit of 10 news entries reached."
+      );
+    }
+
     const newNews = new News({
       title,
       description,
