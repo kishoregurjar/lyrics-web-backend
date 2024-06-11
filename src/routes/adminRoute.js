@@ -18,6 +18,7 @@ const router = express.Router();
 // Helper function to apply validation middlewares
 const validation = (validations) => [...validations, handleValidationErrors];
 
+/* Auth Routes */
 router.post(
   "/login-admin",
   validation([validateAdminLogin]),
@@ -96,6 +97,21 @@ router.get(
   "/get-testimonials-list",
   verifyAdminToken,
   controller.adminController.getTestimonialsList
+);
+
+/* News Routes */
+router.post("/add-news", verifyAdminToken, controller.adminController.addNews);
+router.get("/get-news-list", controller.adminController.getNewsList);
+router.get("/get-news", controller.adminController.getNewsById);
+router.put(
+  "/update-news",
+  verifyAdminToken,
+  controller.adminController.updateNews
+);
+router.put(
+  "/delete-news",
+  verifyAdminToken,
+  controller.adminController.deleteNews
 );
 
 /* Hot Albums Routes */

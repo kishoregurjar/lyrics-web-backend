@@ -1,13 +1,16 @@
 const bcrypt = require("bcrypt");
-const Admin = require("../models/adminModel");
-const { catchRes, successRes } = require("../utils/response");
 const mongoose = require("mongoose");
-const { assignJwt } = require("../middlewares/authMiddleware");
 const jwt = require("jsonwebtoken");
-const { genericMail } = require("../utils/sendMail");
 const { default: axios } = require("axios");
+
+const Admin = require("../models/adminModel");
 const Feedback = require("../models/reviewsModel");
 const Testimonial = require("../models/testimonialModel");
+const News = require("../models/newsModel");
+
+const { catchRes, successRes } = require("../utils/response");
+const { assignJwt } = require("../middlewares/authMiddleware");
+const { genericMail } = require("../utils/sendMail");
 
 /* Auth Section */
 module.exports.adminLogin = async (req, res) => {
@@ -476,6 +479,139 @@ module.exports.getTestimonialsList = async (req, res) => {
   } catch (error) {
     console.error("Error Getting Testimonials List:", error);
     return catchRes(res, error);
+  }
+};
+
+/* News Section */
+module.exports.addNews = async (req, res) => {
+  const session = await mongoose.startSession();
+  session.startTransaction();
+  try {
+    const adminId = req.user._id;
+    const { title, description, author, publishDate, coverImg } = req.body;
+
+    if (!title || !description || !author || !publishDate) {
+      await session.abortTransaction();
+      return successRes(res, 400, false, "All Fields are Required.");
+    }
+
+    const existingAdmin = await Admin.findById(adminId).session(session);
+    if (!existingAdmin) {
+      await session.abortTransaction();
+      return successRes(res, 404, false, "Admin Not Found");
+    }
+
+    const newNews = new News({
+      title,
+      description,
+      author,
+      publishDate,
+      coverImg,
+    });
+
+    const savedNews = await newNews.save({ session });
+
+    await session.commitTransaction();
+
+    return successRes(res, 201, true, "News Added Successfully");
+  } catch (error) {
+    await session.abortTransaction();
+    console.error("Error Creating News:", error);
+    return catchRes(res, error);
+  } finally {
+    session.endSession();
+  }
+};
+
+module.exports.getNewsList = async (req, res) => {
+  const session = await mongoose.startSession();
+  session.startTransaction();
+
+  try {
+    const filter = {
+      $or: [{ deletedAt: null }, { deletedAt: { $exists: false } }],
+    };
+
+    const news = await News.find(filter).session(session);
+
+    await session.commitTransaction();
+    return successRes(res, 200, true, "News List", news);
+  } catch (error) {
+    await session.abortTransaction();
+    console.error("Error Fetching News List:", error);
+    return catchRes(res, error);
+  } finally {
+    session.endSession();
+  }
+};
+
+module.exports.getNewsById = async (req, res) => {
+  const session = await mongoose.startSession();
+  session.startTransaction();
+
+  try {
+    const news = await News.findById(req.query.newsId).session(session);
+    if (!news || news.deletedAt) {
+      await session.abortTransaction();
+      return successRes(res, 404, false, "News Not Found");
+    }
+
+    await session.commitTransaction();
+    return successRes(res, 200, true, "News Details", news);
+  } catch (error) {
+    await session.abortTransaction();
+    console.error("Error Fetching News:", error);
+    return catchRes(res, error);
+  } finally {
+    session.endSession();
+  }
+};
+
+module.exports.updateNews = async (req, res) => {
+  try {
+    const updatedNews = await News.findByIdAndUpdate(req.body.id, req.body, {
+      new: true,
+    });
+
+    if (!updatedNews || updatedNews.deletedAt) {
+      return res
+        .status(404)
+        .json({ success: false, message: "News not found" });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: "News Updated Successfully",
+      data: updatedNews,
+    });
+  } catch (error) {
+    console.error("Error Updating News:", error);
+    return res.status(500).json({ success: false, message: "Server Error" });
+  }
+};
+
+module.exports.deleteNews = async (req, res) => {
+  try {
+    const news = await News.findByIdAndUpdate(
+      req.query.newsId,
+      { deletedAt: Date.now() },
+      { new: true }
+    );
+
+    if (!news) {
+      return res
+        .status(404)
+        .json({ success: false, message: "News not found" });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: "News Deleted Successfully",
+      data: news,
+    });
+  } catch (error) {
+    console.error("Error Deleting News:", error);
+    return res.status(500).json({ success: false, message: "Server Error" });
   }
 };
 
