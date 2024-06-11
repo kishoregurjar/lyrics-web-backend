@@ -48,6 +48,10 @@ const userSchema = new mongoose.Schema({
         default: "user",
         trim: true,
     },
+    avatar: {
+        type: String,
+        trim: true,
+    },
     lastApiHitTime: {
         type: Date,
         default: Date.now

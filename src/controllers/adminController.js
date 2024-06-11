@@ -278,36 +278,32 @@ module.exports.editAdminProfile = async (req, res) => {
 };
 
 module.exports.uploadProfilePicture = async (req, res) => {
-  if (!req.file) {
-    return res
-      .status(400)
-      .json({ success: false, message: "No file uploaded" });
-  }
-
-  const adminId = req.admin.id; // Assumes admin id is stored in the token and set in req.admin
-  const filePath = `/uploads/profile_pictures/${req.file.filename}`;
-
   try {
-    const admin = await Admin.findByIdAndUpdate(
+    if (!req.file) {
+      return successRes(res, 400, false, "No file uploaded");
+    }
+
+    const adminId = req.user._id;
+    const filePath = `http://localhost:3007/uploads/profile_pictures/${req.file.filename}`;
+    console.log(req.file);
+
+    const updatedAdmin = await Admin.findByIdAndUpdate(
       adminId,
-      { profilePicture: filePath },
+      { avatar: filePath },
       { new: true }
     );
 
-    if (!admin) {
-      return res
-        .status(404)
-        .json({ success: false, message: "Admin not found" });
+    if (!updatedAdmin) {
+      return successRes(res, 404, false, "Admin Not Found");
     }
 
-    res.status(200).json({
-      success: true,
-      message: "Profile picture uploaded successfully",
-      data: admin,
+    return successRes(res, 200, true, "Profile Picture Updated Successfully", {
+      path: filePath,
+      updatedAdmin,
     });
   } catch (error) {
-    console.error("Error updating profile picture:", error);
-    res.status(500).json({ success: false, message: "Server Error" });
+    console.error("Error Uploading Profile Picture:", error);
+    return catchRes(res, error);
   }
 };
 

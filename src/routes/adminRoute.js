@@ -13,7 +13,7 @@ const {
   validateUpdateNews,
 } = require("../middlewares/adminValidation");
 const { verifyAdminToken } = require("../middlewares/authMiddleware");
-const { uploadSingleFile } = require("../utils/multer");
+const { uploadAdminAvatar } = require("../utils/multer");
 
 const router = express.Router();
 
@@ -41,10 +41,8 @@ router.put(
 
 router.post(
   "/upload-profile-picture",
-  uploadSingleFile("profilePicture", {
-    fileTypes: /jpeg|jpg|png/,
-    folder: "uploads/profile_pictures",
-  }),
+  verifyAdminToken,
+  uploadAdminAvatar,
   controller.adminController.uploadProfilePicture
 );
 

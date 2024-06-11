@@ -2,11 +2,13 @@ const express = require('express');
 const controller = require('../controllers/indexController');
 const { verifyUserToken } = require('../middlewares/authMiddleware');
 const { validate, userSignupSchema, userLoginSchema, userEditSchema, userChangePasswordSchema, forgetPasswordSchema, userResetPasswordSchema, userFeedbackValidation } = require('../middlewares/userValidation');
+const { uploadUserAvatar } = require('../utils/multer');
 const router = express.Router();
 
 //======================= Auth ==============================/
 router.post('/create-user', validate(userSignupSchema), controller.userController.createUser)
 router.post('/login-user', validate(userLoginSchema), controller.userController.loginUser)
+router.post('/upload-profile-picture', uploadUserAvatar, controller.userController.uploadProfilePicture)
 router.get('/user-profile', verifyUserToken, controller.userController.showUserProfile)
 router.put('/verify-user', controller.userController.verifyUser)
 router.put('/edit-user', validate(userEditSchema), verifyUserToken, controller.userController.editUserProfile)

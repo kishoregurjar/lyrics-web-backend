@@ -34,6 +34,10 @@ const adminSchema = new mongoose.Schema({
     default: "admin",
     trim: true,
   },
+  avatar: {
+    type: String,
+    trim: true,
+  },
   lastApiHitTime: {
     type: Date,
     default: Date.now,
