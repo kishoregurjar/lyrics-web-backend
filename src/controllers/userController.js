@@ -123,69 +123,9 @@ module.exports.uploadProfilePicture = async (req, res) => {
     const filePath = `http://localhost:3007/uploads/profile_pictures/${req.file.filename}`;
     console.log(req.file);
 
-    if (req.headers.authorization) {
-      let token = req.headers.authorization;
-      if (!token) {
-        return successRes(res, 401, false, "Access Denied: Token Not Provided");
-      }
-
-      let decoded;
-
-      try {
-        decoded = jsonwebtoken.verify(token, SECRET_KEY);
-      } catch (err) {
-        if (err.name === "TokenExpiredError") {
-          return successRes(res, 401, false, "Session Timeout: Please Login Again");
-        }
-        return successRes(res, 401, false, "Access Denied: Invalid Token");
-      }
-
-      if (!decoded) {
-        return successRes(res, 401, false, "Access Denied: Invalid Token");
-      }
-
-      const user = await User.findById(decoded._id);
-      if (!user) {
-        return successRes(res, 404, false, "User Not Found");
-      }
-      const existingUser = await userModel.findById(user._id);
-
-      if (existingUser) {
-        // Update avatar for existing user
-        const updatedUser = await userModel.findByIdAndUpdate(
-          user._id,
-          { avatar: filePath },
-          { new: true }
-        );
-
-        if (!updatedUser) {
-          return successRes(res, 404, false, "User Not Found");
-        }
-
-        return successRes(
-          res,
-          200,
-          true,
-          "Profile Picture Updated Successfully",
-          {
-            path: filePath,
-            updatedUser,
-          }
-        );
-      } else {
-        return successRes(res, 404, false, "User Not Found");
-      }
-    } else {
-      return successRes(
-        res,
-        200,
-        true,
-        "Profile Picture Uploaded Successfully",
-        {
-          path: filePath,
-        }
-      );
-    }
+    return successRes(res, 200, true, "Profile Picture Uploaded Successfully", {
+      path: filePath,
+    });
   } catch (error) {
     console.error("Error Uploading Profile Picture:", error);
     return catchRes(res, error);
@@ -464,3 +404,81 @@ module.exports.getTestimonial = async (req, res) => {
 //     console.error('Error fetching ISRC:', error);
 //   }
 // })();
+
+// module.exports.uploadProfilePicture = async (req, res) => {
+//   try {
+//     if (!req.file) {
+//       return successRes(res, 400, false, "No File Uploaded");
+//     }
+
+//     const filePath = `http://localhost:3007/uploads/profile_pictures/${req.file.filename}`;
+//     console.log(req.file);
+
+//     if (req.headers.authorization) {
+//       let token = req.headers.authorization;
+//       if (!token) {
+//         return successRes(res, 401, false, "Access Denied: Token Not Provided");
+//       }
+
+//       let decoded;
+
+//       try {
+//         decoded = jsonwebtoken.verify(token, SECRET_KEY);
+//       } catch (err) {
+//         if (err.name === "TokenExpiredError") {
+//           return successRes(res, 401, false, "Session Timeout: Please Login Again");
+//         }
+//         return successRes(res, 401, false, "Access Denied: Invalid Token");
+//       }
+
+//       if (!decoded) {
+//         return successRes(res, 401, false, "Access Denied: Invalid Token");
+//       }
+
+//       const user = await User.findById(decoded._id);
+//       if (!user) {
+//         return successRes(res, 404, false, "User Not Found");
+//       }
+//       const existingUser = await userModel.findById(user._id);
+
+//       if (existingUser) {
+//         // Update avatar for existing user
+//         const updatedUser = await userModel.findByIdAndUpdate(
+//           user._id,
+//           { avatar: filePath },
+//           { new: true }
+//         );
+
+//         if (!updatedUser) {
+//           return successRes(res, 404, false, "User Not Found");
+//         }
+
+//         return successRes(
+//           res,
+//           200,
+//           true,
+//           "Profile Picture Updated Successfully",
+//           {
+//             path: filePath,
+//             updatedUser,
+//           }
+//         );
+//       } else {
+//         return successRes(res, 404, false, "User Not Found");
+//       }
+//     } else {
+//       return successRes(
+//         res,
+//         200,
+//         true,
+//         "Profile Picture Uploaded Successfully",
+//         {
+//           path: filePath,
+//         }
+//       );
+//     }
+//   } catch (error) {
+//     console.error("Error Uploading Profile Picture:", error);
+//     return catchRes(res, error);
+//   }
+// };
