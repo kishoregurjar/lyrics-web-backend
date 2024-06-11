@@ -1,21 +1,35 @@
 const multer = require("multer");
 const path = require("path");
+const fs = require("fs");
+const { successRes } = require("./response");
 
 // Utility to create multer configuration
 const createMulter = (options = {}) => {
   const {
-    folder = "uploads",
-    fileSize = 10000000,
-    fileTypes = /jpeg|jpg|png|pdf/,
+    folder = "uploads/miscellaneous", // default folder
+    fileSize = 10000000, // default file size
+    fileTypes = /jpeg|jpg|png|pdf|doc|docx|txt|xls|xlsx|csv|json|zip|rar/, // default file types
   } = options;
+
+  // Ensure the upload directory exists
+  if (!fs.existsSync(folder)) {
+    fs.mkdirSync(folder, { recursive: true });
+  }
 
   // Set storage engine
   const storage = multer.diskStorage({
     destination: (req, file, cb) => {
+      // Ensure the folder exists before storing the file
+      if (!fs.existsSync(folder)) {
+        fs.mkdirSync(folder, { recursive: true });
+      }
       cb(null, folder);
     },
     filename: (req, file, cb) => {
-      cb(null, `${Date.now()}-${file.originalname}`);
+      // cb(null, `${Date.now()}-${file.originalname}`);
+      const ext = file.mimetype.split("/")[1];
+      const fileName = `${Date.now()}.${ext}`;
+      cb(null, fileName);
     },
   });
 
@@ -29,7 +43,14 @@ const createMulter = (options = {}) => {
     if (mimetype && extname) {
       return cb(null, true);
     } else {
-      cb(`Error: Only ${fileTypes.toString()} are allowed!`);
+      const allowedExtensions = fileTypes
+        .toString()
+        .toUpperCase()
+        .replace(/^\//, "") // Remove slash at the start
+        .replace(/\/$/, "") // Remove slash at the end
+        .replace(/\|/g, ", ");
+      const errorMessage = `Only ${allowedExtensions} files are allowed.`;
+      cb(errorMessage);
     }
   };
 
@@ -48,7 +69,7 @@ const uploadSingleFile = (fieldName, options) => {
   return (req, res, next) => {
     upload(req, res, (err) => {
       if (err) {
-        return res.status(400).json({ success: false, message: err });
+        return successRes(res, 400, false, err);
       }
       next();
     });
@@ -61,14 +82,24 @@ const uploadMultipleFiles = (fieldName, maxCount, options) => {
   return (req, res, next) => {
     upload(req, res, (err) => {
       if (err) {
-        return res.status(400).json({ success: false, message: err });
+        return successRes(res, 400, false, err);
       }
       next();
     });
   };
 };
 
-module.exports = {
-  uploadSingleFile,
-  uploadMultipleFiles,
-};
+/* Admin Section */
+module.exports.uploadAdminAvatar = uploadSingleFile("image", {
+  fileTypes: /jpeg|jpg|png/,
+  folder: "uploads/admin_profile_pictures",
+});
+
+/* User Section */
+module.exports.uploadUserAvatar = uploadSingleFile("image", {
+  fileTypes: /jpeg|jpg|png/,
+  folder: "uploads/user_profile_pictures",
+});
+
+module.exports.uploadSingleFile = uploadSingleFile;
+module.exports.uploadMultipleFiles = uploadMultipleFiles;
