@@ -18,7 +18,6 @@ const router = express.Router();
 // Helper function to apply validation middlewares
 const validation = (validations) => [...validations, handleValidationErrors];
 
-// Admin Authentication Routes
 router.post(
   "/login-admin",
   validation([validateAdminLogin]),
@@ -46,75 +45,76 @@ router.post(
   controller.adminController.uploadProfilePicture
 );
 
-router.post('/get-admin-lyrics', controller.lyricsController.getLyricsAdmin)
-
-
-// Sub-router for routes requiring admin token verification
-const protectedRoute = express.Router();
-
-protectedRoute.use(verifyAdminToken);
-
-protectedRoute.put(
+router.put(
   "/change-password",
   validation([validateChangePassword]),
+  verifyAdminToken,
   controller.adminController.changePassword
 );
 
-protectedRoute.put(
+router.put(
   "/edit-admin-profile",
   validation([validateEditAdminProfile]),
+  verifyAdminToken,
   controller.adminController.editAdminProfile
 );
 
-protectedRoute.get(
+router.get(
   "/admin-profile",
+  verifyAdminToken,
   controller.adminController.showAdminProfile
 );
 
-protectedRoute.get(
+router.get(
   "/get-user-feedbacks-list",
+  verifyAdminToken,
   controller.adminController.getUserFeedbacksList
 );
 
-// Testimonial Routes
-protectedRoute.post(
+/* Testimonial Routes */
+router.post(
   "/add-testimonial",
   validation([validateAddTestimonial]),
+  verifyAdminToken,
   controller.adminController.addTestimonial
 );
 
-protectedRoute.put(
+router.put(
   "/update-testimonial",
   validation([validateUpdateTestimonial]),
+  verifyAdminToken,
   controller.adminController.updateTestimonial
 );
 
-protectedRoute.put(
+router.put(
   "/delete-testimonial",
+  verifyAdminToken,
   controller.adminController.deleteTestimonial
 );
 
-protectedRoute.get(
+router.get(
   "/get-testimonials-list",
+  verifyAdminToken,
   controller.adminController.getTestimonialsList
 );
 
-// Use the protectedRoute for all routes that require admin verification
-router.use(protectedRoute);
+/* Hot Albums Routes */
+router.post("/add-hot-album", controller.lyricsController.addHotSong);
 
-// Lyrics Routes
+router.get("/get-hot-album", controller.lyricsController.getHotSongList);
+
+router.get("/search-song", controller.lyricsController.searchSong);
+
+router.delete("/delete-song", controller.lyricsController.deleteHotSong);
+
+/* Lyrics Routes */
+
+router.post("/get-admin-lyrics", controller.lyricsController.getLyricsAdmin);
+
 router.get("/get-lyrics", controller.adminController.getLyrics);
 
 router.get("/get-top-lyrics", controller.adminController.getTopLyrics);
 
 router.get("/get-search-lyrics", controller.adminController.getSearchLyrics);
-
-// =============      Add hot albumbs =====================/
-
-router.post('/add-hot-album', controller.lyricsController.addHotSong)
-router.get('/get-hot-album', controller.lyricsController.getHotSongList)
-router.get('/search-song', controller.lyricsController.searchSong)
-router.delete('/delete-song', controller.lyricsController.deleteHotSong)
-
 
 module.exports = router;

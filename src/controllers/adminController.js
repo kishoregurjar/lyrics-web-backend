@@ -482,29 +482,22 @@ module.exports.getTestimonialsList = async (req, res) => {
 /* Lyrics Section */
 module.exports.getLyrics = async (req, res) => {
   try {
-    // const { artist, track } = req.query;
-
-    // if (!artist || !track) {
-    //   return successRes(res, 400, false, "Artist and Track are required.");
-    // }
+    const { trackId } = req.body;
 
     // LyricFind API details
     const apiType = "https://api.lyricfind.com/lyric.do";
     const apiKey = process.env.LF_API_KEY;
-    const lrcKey = process.env.LF_LRC_KEY;
     const territory = `territory=${process.env.LF_TERRITORY}`;
     const reqType = "reqtype=default";
-    const format = "format=lrc";
     const output = "output=json";
+    const displayKey = process.env.LF_LRC_KEY;
 
-    const url1 = `${apiType}?apikey=${apiKey}&${territory}&${reqType}&lrckey=${lrcKey}&trackid=amg:2033&${format}&${output}`;
-    const url2 = `${apiType}?apikey=${apiKey}&${territory}&${reqType}&trackid=isrc:USGF19925401&${output}`;
-    const url3 = `${apiType}?apikey=${apiKey}&${territory}&${reqType}&trackid=artistname:eminem,trackname:white+america&${output}`;
+    const url1 = `${apiType}?apikey=${apiKey}&${territory}&${reqType}&displaykey=${displayKey}&trackid=isrc:${trackId}&${output}`;
 
     console.log(url1);
 
     // Make the request to LyricFind API
-    const response = await axios.get(url2);
+    const response = await axios.get(url1);
 
     console.log(response.data);
 
@@ -561,32 +554,42 @@ module.exports.getTopLyrics = async (req, res) => {
 
 module.exports.getSearchLyrics = async (req, res) => {
   try {
+    let { query } = req.body;
+
+    if (!query) {
+      return successRes(res, 400, false, "Track Name is required.");
+    }
+
     // LyricFind API details
     const apiType = "https://api.lyricfind.com/search.do";
     const apiKey = process.env.LF_API_KEY;
-    const lrcKey = process.env.LF_LRC_KEY;
     const searchKey = process.env.LF_SEARCH_KEY;
     const territory = `territory=${process.env.LF_TERRITORY}`;
     const reqType = "reqtype=default";
-    const format = "format=lrc";
     const output = "output=json";
 
-    const url1 = `${apiType}?apikey=${searchKey}&${territory}&${reqType}&displaykey=${lrcKey}&${output}&searchtype=track&lyrics=I+kissed+a+girl+and+i+liked+it&alltracks=no`;
+    // URL-encode the track name and replace spaces with '+'
+    const encodedTrackName = encodeURIComponent(query).replace(/%20/g, "+");
+    console.log(encodedTrackName);
+    const lyrics = `lyrics=${encodedTrackName}`;
 
-    console.log(url1);
+    // Construct the URL
+    const url = `${apiType}?apikey=${searchKey}&${territory}&${reqType}&displaykey=${apiKey}&${output}&searchtype=track&alltracks=no&${lyrics}`;
+
+    console.log(url);
 
     // Make the request to LyricFind API
-    const response = await axios.get(url1);
+    const { status, data } = await axios.get(url);
 
-    console.log(response.data);
+    console.log(data);
 
-    if (response.data && response.data) {
+    if (status === 200 && data && data.tracks) {
       return successRes(
         res,
         200,
         true,
         "Lyrics Retrieved Successfully",
-        response.data
+        data.tracks
       );
     } else {
       return successRes(res, 404, false, "Lyrics Not Found.");
