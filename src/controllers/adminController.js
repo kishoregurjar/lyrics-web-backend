@@ -568,50 +568,82 @@ module.exports.getNewsById = async (req, res) => {
 };
 
 module.exports.updateNews = async (req, res) => {
+  const session = await mongoose.startSession();
+  session.startTransaction();
   try {
-    const updatedNews = await News.findByIdAndUpdate(req.body.id, req.body, {
+    const adminId = req.user._id;
+    const { newsId } = req.body;
+    const { title, description, author, publishDate, coverImg } = req.body;
+
+    if (!title || !description || !author || !publishDate) {
+      await session.abortTransaction();
+      return successRes(res, 400, false, "All Fields are Required.");
+    }
+
+    const existingAdmin = await Admin.findById(adminId).session(session);
+    if (!existingAdmin) {
+      await session.abortTransaction();
+      return successRes(res, 404, false, "Admin Not Found");
+    }
+
+    let updatedNews = {
+      title,
+      description,
+      author,
+      publishDate,
+      coverImg,
+    };
+
+    const isUpdatedNews = await News.findByIdAndUpdate(newsId, updatedNews, {
       new: true,
     });
 
-    if (!updatedNews || updatedNews.deletedAt) {
-      return res
-        .status(404)
-        .json({ success: false, message: "News not found" });
+    if (!isUpdatedNews || isUpdatedNews.deletedAt) {
+      return successRes(res, 404, false, "News Not Found");
     }
+    await session.commitTransaction();
 
-    return res.status(200).json({
-      success: true,
-      message: "News Updated Successfully",
-      data: updatedNews,
-    });
+    return successRes(res, 200, true, "News Updated Successfully", updatedNews);
   } catch (error) {
     console.error("Error Updating News:", error);
-    return res.status(500).json({ success: false, message: "Server Error" });
+    await session.abortTransaction();
+    return catchRes(res, error);
+  } finally {
+    session.endSession();
   }
 };
 
 module.exports.deleteNews = async (req, res) => {
+  const session = await mongoose.startSession();
+  session.startTransaction();
   try {
+    const adminId = req.user._id;
+    const { newsId } = req.body;
+
+    const existingAdmin = await Admin.findById(adminId).session(session);
+    if (!existingAdmin) {
+      await session.abortTransaction();
+      return successRes(res, 404, false, "Admin Not Found");
+    }
+
     const news = await News.findByIdAndUpdate(
-      req.query.newsId,
+      newsId,
       { deletedAt: Date.now() },
       { new: true }
     );
 
     if (!news) {
-      return res
-        .status(404)
-        .json({ success: false, message: "News not found" });
+      return successRes(res, 404, false, "News Not Found");
     }
+    await session.commitTransaction();
 
-    return res.status(200).json({
-      success: true,
-      message: "News Deleted Successfully",
-      data: news,
-    });
+    return successRes(res, 200, true, "News Deleted Successfully", news);
   } catch (error) {
     console.error("Error Deleting News:", error);
-    return res.status(500).json({ success: false, message: "Server Error" });
+    await session.abortTransaction();
+    return catchRes(res, error);
+  } finally {
+    session.endSession();
   }
 };
 
