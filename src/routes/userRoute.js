@@ -14,15 +14,19 @@ router.put('/change-user-password', validate(userChangePasswordSchema), verifyUs
 router.post('/forget-password', validate(forgetPasswordSchema), controller.userController.forgetPassword)
 router.put('/reset-password', validate(userResetPasswordSchema), controller.userController.resetPassword)
 
-//======================Feedback ================================//
+//====================== Feedback ================================//
 
 router.post('/submit-user-feedback', validate(userFeedbackValidation), controller.userController.submitFeedBack)
 
-//===================== Get Testimonial ========================//
+//===================== Testimonial ========================//
 
 router.get('/get-testimonial', controller.userController.getTestimonial)
 
-// ====================== Search Everthing ====================//
+//===================== News ========================//
+router.get("/get-news-list", controller.adminController.getNewsList);
+router.get("/get-news", controller.adminController.getNewsById);
+
+// ====================== Search Everything ====================//
 
 router.post('/search', controller.lyricsController.searchSAA)
 router.get('/artist/song', controller.lyricsController.artistSong)

@@ -1,4 +1,5 @@
 const { check, validationResult } = require("express-validator");
+const { successRes } = require("../utils/response");
 
 const passwordRegex =
   /^(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?])[0-9a-zA-Z!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]{8,}$/;
@@ -94,6 +95,7 @@ exports.validateEditAdminProfile = [
     .withMessage("Mobile number must be a valid 10-digit number"),
 ];
 
+/* Testimonial Validation */
 exports.validateAddTestimonial = [
   check("fullName")
     .trim()
@@ -140,13 +142,66 @@ exports.validateUpdateTestimonial = [
     .withMessage("Description must be between 10 and 1000 characters long"),
 ];
 
+/* News Validation */
+exports.validateAddNews = [
+  check("title")
+    .trim()
+    .notEmpty()
+    .withMessage("Title is Required")
+    .isString()
+    .withMessage("Title Should be String Only"),
+  check("description")
+    .trim()
+    .notEmpty()
+    .withMessage("Description is Required")
+    .isString()
+    .withMessage("Description Should be String Only"),
+  check("author")
+    .trim()
+    .notEmpty()
+    .withMessage("Author is Required")
+    .isString()
+    .withMessage("Author Should be String Only"),
+  check("publishDate")
+    .trim()
+    .notEmpty()
+    .withMessage("Publish Date is Required")
+    .isDate({ format: "DD-MM-YYYY" })
+    .withMessage("Publish Date must be a valid date in DD-MM-YYYY format"),
+];
+
+exports.validateUpdateNews = [
+  check("title")
+    .trim()
+    .notEmpty()
+    .withMessage("Title is Required")
+    .isString()
+    .withMessage("Title Should be String Only"),
+  check("description")
+    .trim()
+    .notEmpty()
+    .withMessage("Description is Required")
+    .isString()
+    .withMessage("Description Should be String Only"),
+  check("author")
+    .trim()
+    .notEmpty()
+    .withMessage("Author is Required")
+    .isString()
+    .withMessage("Author Should be String Only"),
+  check("publishDate")
+    .trim()
+    .notEmpty()
+    .withMessage("Publish Date is Required")
+    .isDate({ format: "DD-MM-YYYY" })
+    .withMessage("Publish Date must be a valid date in DD-MM-YYYY format"),
+];
+
 // Middleware Function to Handle Validation Errors
 exports.handleValidationErrors = (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
-    return res
-      .status(400)
-      .json({ success: false, message: errors.array()[0].msg });
+    return successRes(res, 400, false, errors.array()[0].msg);
   }
   next();
 };

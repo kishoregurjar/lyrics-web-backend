@@ -9,6 +9,8 @@ const {
   validateEditAdminProfile,
   validateAddTestimonial,
   validateUpdateTestimonial,
+  validateAddNews,
+  validateUpdateNews,
 } = require("../middlewares/adminValidation");
 const { verifyAdminToken } = require("../middlewares/authMiddleware");
 const { uploadSingleFile } = require("../utils/multer");
@@ -100,11 +102,17 @@ router.get(
 );
 
 /* News Routes */
-router.post("/add-news", verifyAdminToken, controller.adminController.addNews);
+router.post(
+  "/add-news",
+  validation([validateAddNews]),
+  verifyAdminToken,
+  controller.adminController.addNews
+);
 router.get("/get-news-list", controller.adminController.getNewsList);
 router.get("/get-news", controller.adminController.getNewsById);
 router.put(
   "/update-news",
+  validation([validateUpdateNews]),
   verifyAdminToken,
   controller.adminController.updateNews
 );
@@ -124,7 +132,6 @@ router.get("/search-song", controller.lyricsController.searchSong);
 router.delete("/delete-song", controller.lyricsController.deleteHotSong);
 
 /* Lyrics Routes */
-
 router.post("/get-admin-lyrics", controller.lyricsController.getLyricsAdmin);
 
 router.get("/get-lyrics", controller.adminController.getLyrics);
