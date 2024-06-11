@@ -545,7 +545,7 @@ module.exports.getNewsList = async (req, res) => {
       $or: [{ deletedAt: null }, { deletedAt: { $exists: false } }],
     };
 
-    const news = await News.find(filter).session(session);
+    const news = await News.find().session(session);
 
     await session.commitTransaction();
     return successRes(res, 200, true, "News List", news);
@@ -639,11 +639,9 @@ module.exports.deleteNews = async (req, res) => {
       return successRes(res, 404, false, "Admin Not Found");
     }
 
-    const news = await News.findByIdAndUpdate(
-      newsId,
-      { deletedAt: Date.now() },
-      { new: true }
-    );
+    const news = await News.findByIdAndDelete(newsId, {
+      deletedAt: Date.now(),
+    });
 
     if (!news) {
       return successRes(res, 404, false, "News Not Found");
