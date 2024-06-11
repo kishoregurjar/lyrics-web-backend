@@ -631,7 +631,7 @@ module.exports.deleteNews = async (req, res) => {
   session.startTransaction();
   try {
     const adminId = req.user._id;
-    const { newsId } = req.body;
+    const { newsId } = req.query;
 
     const existingAdmin = await Admin.findById(adminId).session(session);
     if (!existingAdmin) {
