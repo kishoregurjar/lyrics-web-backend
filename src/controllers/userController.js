@@ -7,6 +7,7 @@ const { genericMail } = require("../utils/sendMail");
 const jwt = require("jsonwebtoken");
 const Feedback = require("../models/reviewsModel");
 const Testimonial = require("../models/testimonialModel");
+const { USER_AVATAR } = require("../utils/constants");
 
 module.exports.createUser = async (req, res, next) => {
   let { firstName, lastName, email, password, mobile } = req.body;
@@ -120,7 +121,7 @@ module.exports.uploadProfilePicture = async (req, res) => {
       return successRes(res, 400, false, "No File Uploaded");
     }
 
-    const filePath = `http://localhost:3007/uploads/profile_pictures/${req.file.filename}`;
+    const filePath = `${USER_AVATAR}${req.file.filename}`;
     console.log(req.file);
 
     return successRes(res, 200, true, "Profile Picture Uploaded Successfully", {

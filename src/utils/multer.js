@@ -95,6 +95,16 @@ module.exports.uploadAdminAvatar = uploadSingleFile("image", {
   folder: "uploads/admin_profile_pictures",
 });
 
+module.exports.uploadTestimonialAvatar = uploadSingleFile("image", {
+  fileTypes: /jpeg|jpg|png/,
+  folder: "uploads/testimonial_pictures",
+});
+
+module.exports.uploadNewsAvatar = uploadSingleFile("image", {
+  fileTypes: /jpeg|jpg|png/,
+  folder: "uploads/news_pictures",
+});
+
 /* User Section */
 module.exports.uploadUserAvatar = uploadSingleFile("image", {
   fileTypes: /jpeg|jpg|png/,

@@ -13,7 +13,11 @@ const {
   validateUpdateNews,
 } = require("../middlewares/adminValidation");
 const { verifyAdminToken } = require("../middlewares/authMiddleware");
-const { uploadAdminAvatar } = require("../utils/multer");
+const {
+  uploadAdminAvatar,
+  uploadTestimonialAvatar,
+  uploadNewsAvatar,
+} = require("../utils/multer");
 
 const router = express.Router();
 
@@ -43,7 +47,7 @@ router.post(
   "/upload-profile-picture",
   verifyAdminToken,
   uploadAdminAvatar,
-  controller.adminController.uploadProfilePicture
+  controller.adminController.uploadAdminAvatar
 );
 
 router.put(
@@ -99,6 +103,13 @@ router.get(
   controller.adminController.getTestimonialsList
 );
 
+router.post(
+  "/upload-testimonial-avatar",
+  verifyAdminToken,
+  uploadTestimonialAvatar,
+  controller.adminController.uploadTestimonialAvatar
+);
+
 /* News Routes */
 router.post(
   "/add-news",
@@ -118,6 +129,13 @@ router.put(
   "/delete-news",
   verifyAdminToken,
   controller.adminController.deleteNews
+);
+
+router.post(
+  "/upload-news-avatar",
+  verifyAdminToken,
+  uploadNewsAvatar,
+  controller.adminController.uploadNewsAvatar
 );
 
 /* Hot Albums Routes */

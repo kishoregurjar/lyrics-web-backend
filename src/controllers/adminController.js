@@ -11,6 +11,11 @@ const News = require("../models/newsModel");
 const { catchRes, successRes } = require("../utils/response");
 const { assignJwt } = require("../middlewares/authMiddleware");
 const { genericMail } = require("../utils/sendMail");
+const {
+  TESTIMONIAL_AVATAR,
+  ADMIN_AVATAR,
+  NEWS_AVATAR,
+} = require("../utils/constants");
 
 /* Auth Section */
 module.exports.adminLogin = async (req, res) => {
@@ -277,14 +282,14 @@ module.exports.editAdminProfile = async (req, res) => {
   }
 };
 
-module.exports.uploadProfilePicture = async (req, res) => {
+module.exports.uploadAdminAvatar = async (req, res) => {
   try {
     if (!req.file) {
       return successRes(res, 400, false, "No file uploaded");
     }
 
     const adminId = req.user._id;
-    const filePath = `http://localhost:3007/uploads/profile_pictures/${req.file.filename}`;
+    const filePath = `${ADMIN_AVATAR}${req.file.filename}`;
     console.log(req.file);
 
     const updatedAdmin = await Admin.findByIdAndUpdate(
@@ -478,6 +483,30 @@ module.exports.getTestimonialsList = async (req, res) => {
   }
 };
 
+module.exports.uploadTestimonialAvatar = async (req, res) => {
+  try {
+    if (!req.file) {
+      return successRes(res, 400, false, "No File Uploaded");
+    }
+
+    const filePath = `${TESTIMONIAL_AVATAR}${req.file.filename}`;
+    console.log(req.file);
+
+    return successRes(
+      res,
+      200,
+      true,
+      "Testimonial Avatar Uploaded Successfully",
+      {
+        path: filePath,
+      }
+    );
+  } catch (error) {
+    console.error("Error Uploading Testimonial Avatar:", error);
+    return catchRes(res, error);
+  }
+};
+
 /* News Section */
 module.exports.addNews = async (req, res) => {
   const session = await mongoose.startSession();
@@ -655,6 +684,24 @@ module.exports.deleteNews = async (req, res) => {
     return catchRes(res, error);
   } finally {
     session.endSession();
+  }
+};
+
+module.exports.uploadNewsAvatar = async (req, res) => {
+  try {
+    if (!req.file) {
+      return successRes(res, 400, false, "No File Uploaded");
+    }
+
+    const filePath = `${NEWS_AVATAR}${req.file.filename}`;
+    console.log(req.file);
+
+    return successRes(res, 200, true, "News Avatar Uploaded Successfully", {
+      path: filePath,
+    });
+  } catch (error) {
+    console.error("Error Uploading News Avatar:", error);
+    return catchRes(res, error);
   }
 };
 
