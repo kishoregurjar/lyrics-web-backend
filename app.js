@@ -17,14 +17,16 @@ let PORT = process.env.APP_PORT || 3007;
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 100,
-  message: "Too many requests from this IP, please try again after 15 minutes"
+  message: "Too many requests from this IP, please try again after 15 minutes",
 });
 app.use(limiter);
 app.use(compression());
 
-app.use(cors({
-  origin: 'http://localhost:3000'
-}));
+app.use(
+  cors({
+    origin: "http://localhost:3000",
+  })
+);
 app.use(helmet());
 app.use(express.json());
 app.use(
@@ -32,6 +34,7 @@ app.use(
     extended: true,
   })
 );
+app.use(express.static("uploads"));
 
 connectDB().catch(console.dir);
 
