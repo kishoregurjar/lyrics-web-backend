@@ -15,6 +15,7 @@ const {
   TESTIMONIAL_AVATAR,
   ADMIN_AVATAR,
   NEWS_AVATAR,
+  CAROUSEL_AVATAR,
 } = require("../utils/constants");
 
 /* Auth Section */
@@ -334,6 +335,31 @@ module.exports.getUserFeedbacksList = async (req, res) => {
     await session.abortTransaction();
     session.endSession();
     console.error("Error Retrieving User Feedbacks:", error);
+    return catchRes(res, error);
+  }
+};
+
+module.exports.uploadCarouselImages = async (req, res) => {
+  try {
+    if (!req.files) {
+      return successRes(res, 400, false, "No File Uploaded");
+    }
+
+    // Extract paths from req.files and create an array of objects with the key path
+    const filePaths = req.files.map((file) => ({
+      path: `${CAROUSEL_AVATAR}${file.filename}`,
+    }));
+
+    // Send the response with the array of file paths
+    return successRes(
+      res,
+      200,
+      true,
+      "Carousel Images Uploaded Successfully",
+      filePaths
+    );
+  } catch (error) {
+    console.error("Error Uploading Carousel Images:", error);
     return catchRes(res, error);
   }
 };

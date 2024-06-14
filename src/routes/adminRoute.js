@@ -17,6 +17,7 @@ const {
   uploadAdminAvatar,
   uploadTestimonialAvatar,
   uploadNewsAvatar,
+  uploadCarouselImages,
 } = require("../utils/multer");
 
 const router = express.Router();
@@ -70,10 +71,18 @@ router.get(
   controller.adminController.showAdminProfile
 );
 
+/* Admin Access */
 router.get(
   "/get-user-feedbacks-list",
   verifyAdminToken,
   controller.adminController.getUserFeedbacksList
+);
+
+router.post(
+  "/upload-carousel-images",
+  verifyAdminToken,
+  uploadCarouselImages,
+  controller.adminController.uploadCarouselImages
 );
 
 /* Testimonial Routes */

@@ -22,19 +22,20 @@ const limiter = rateLimit({
 app.use(limiter);
 app.use(compression());
 
-app.use(
-  cors({
-    origin: "http://localhost:3000",
-  })
-);
-app.use(helmet());
+app.use(express.static("uploads"));
+const corsOptions = {
+  origin: "http://localhost:3000", // Your front-end origin
+  optionsSuccessStatus: 200,
+};
+
+app.use(cors(corsOptions));
+app.use(helmet({ crossOriginResourcePolicy: false }));
 app.use(express.json());
 app.use(
   express.urlencoded({
     extended: true,
   })
 );
-app.use(express.static("uploads"));
 
 connectDB().catch(console.dir);
 

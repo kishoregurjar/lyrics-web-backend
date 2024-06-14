@@ -82,7 +82,11 @@ const uploadMultipleFiles = (fieldName, maxCount, options) => {
   return (req, res, next) => {
     upload(req, res, (err) => {
       if (err) {
-        return successRes(res, 400, false, err);
+        if (err instanceof multer.MulterError) {
+          return successRes(res, 400, false, err.message);
+        } else {
+          return successRes(res, 400, false, err.message);
+        }
       }
       next();
     });
@@ -103,6 +107,11 @@ module.exports.uploadTestimonialAvatar = uploadSingleFile("image", {
 module.exports.uploadNewsAvatar = uploadSingleFile("image", {
   fileTypes: /jpeg|jpg|png/,
   folder: "uploads/news_pictures",
+});
+
+module.exports.uploadCarouselImages = uploadMultipleFiles("images", 5, {
+  fileTypes: /jpeg|jpg|png/,
+  folder: "uploads/carousel_pictures",
 });
 
 /* User Section */
