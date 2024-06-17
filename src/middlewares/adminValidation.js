@@ -166,7 +166,6 @@ exports.validateAddNews = [
     .trim()
     .notEmpty()
     .withMessage("Publish Date is Required")
-    .isDate({ format: "DD-MM-YYYY" })
     .withMessage("Publish Date must be a valid date in DD-MM-YYYY format"),
 ];
 

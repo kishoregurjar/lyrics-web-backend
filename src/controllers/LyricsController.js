@@ -122,7 +122,7 @@ module.exports.deleteHotSong = async (req, res) => {
     const session = await mongoose.startSession();
     session.startTransaction();
     try {
-        const { hotAlbumId } = req.body;
+        const { hotAlbumId } = req.query;
 
         const findAdmin = await Admin.findById(_id).session(session);
         if (!findAdmin) {
@@ -168,8 +168,6 @@ module.exports.searchSong = async (req, res) => {
                 limit: 10
             }
         });
-
-        // console.log(response.data, "response")
 
         const tracks = response.data.tracks.items.map(track => ({
             name: track.name,

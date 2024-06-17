@@ -148,13 +148,14 @@ router.post(
 );
 
 /* Hot Albums Routes */
-router.post("/add-hot-album", controller.lyricsController.addHotSong);
+router.post("/add-hot-album", verifyAdminToken, controller.lyricsController.addHotSong);
 
-router.get("/get-hot-album", controller.lyricsController.getHotSongList);
+router.get("/get-hot-album", verifyAdminToken, controller.lyricsController.getHotSongList);
 
 router.get("/search-song", controller.lyricsController.searchSong);
 
-router.delete("/delete-song", controller.lyricsController.deleteHotSong);
+router.delete("/delete-song", verifyAdminToken, controller.lyricsController.deleteHotSong);
+
 
 /* Lyrics Routes */
 router.post("/get-admin-lyrics", controller.lyricsController.getLyricsAdmin);
