@@ -80,6 +80,27 @@ const uploadSingleFile = (fieldName, options) => {
 const uploadMultipleFiles = (fieldName, maxCount, options) => {
   const upload = createMulter(options).array(fieldName, maxCount);
   return (req, res, next) => {
+    console.log(req.file);
+    console.log(req.files);
+
+    // Check file count
+    if (req.files && req.files.length > maxCount) {
+      return successRes(
+        res,
+        400,
+        false,
+        `No more than ${maxCount} files are allowed.`
+      );
+    }
+    if (req.files && req.files.length < minCount) {
+      return successRes(
+        res,
+        400,
+        false,
+        `At least ${minCount} files are required.`
+      );
+    }
+
     upload(req, res, (err) => {
       if (err) {
         if (err instanceof multer.MulterError) {

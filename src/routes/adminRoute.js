@@ -19,6 +19,7 @@ const {
   uploadNewsAvatar,
   uploadCarouselImages,
 } = require("../utils/multer");
+const { uploadProfile, uploadCarousel } = require("../utils/multerConfig");
 
 const router = express.Router();
 
@@ -81,7 +82,8 @@ router.get(
 router.post(
   "/upload-carousel-images",
   verifyAdminToken,
-  uploadCarouselImages,
+  // uploadCarouselImages,
+  uploadCarousel.array("images", 5),
   controller.adminController.uploadCarouselImages
 );
 
