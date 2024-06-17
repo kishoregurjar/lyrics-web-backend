@@ -82,8 +82,8 @@ router.get(
 router.post(
   "/upload-carousel-images",
   verifyAdminToken,
-  // uploadCarouselImages,
-  uploadCarousel.array("images", 5),
+  uploadCarouselImages,
+  // uploadCarousel.array("images", 5),
   controller.adminController.uploadCarouselImages
 );
 
@@ -150,14 +150,25 @@ router.post(
 );
 
 /* Hot Albums Routes */
-router.post("/add-hot-album", verifyAdminToken, controller.lyricsController.addHotSong);
+router.post(
+  "/add-hot-album",
+  verifyAdminToken,
+  controller.lyricsController.addHotSong
+);
 
-router.get("/get-hot-album", verifyAdminToken, controller.lyricsController.getHotSongList);
+router.get(
+  "/get-hot-album",
+  verifyAdminToken,
+  controller.lyricsController.getHotSongList
+);
 
 router.get("/search-song", controller.lyricsController.searchSong);
 
-router.delete("/delete-song", verifyAdminToken, controller.lyricsController.deleteHotSong);
-
+router.delete(
+  "/delete-song",
+  verifyAdminToken,
+  controller.lyricsController.deleteHotSong
+);
 
 /* Lyrics Routes */
 router.post("/get-admin-lyrics", controller.lyricsController.getLyricsAdmin);

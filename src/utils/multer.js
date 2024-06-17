@@ -7,7 +7,7 @@ const { successRes } = require("./response");
 const createMulter = (options = {}) => {
   const {
     folder = "uploads/miscellaneous", // default folder
-    fileSize = 10000000, // default file size
+    fileSize = 10000000, // default file size 10MB
     fileTypes = /jpeg|jpg|png|pdf|doc|docx|txt|xls|xlsx|csv|json|zip|rar/, // default file types
   } = options;
 
@@ -50,13 +50,13 @@ const createMulter = (options = {}) => {
         .replace(/\/$/, "") // Remove slash at the end
         .replace(/\|/g, ", ");
       const errorMessage = `Only ${allowedExtensions} files are allowed.`;
-      cb(errorMessage);
+      return cb(new Error(errorMessage));
     }
   };
 
   return multer({
     storage: storage,
-    // limits: { fileSize: fileSize },
+    limits: { fileSize: fileSize },
     fileFilter: (req, file, cb) => {
       checkFileType(file, cb);
     },
@@ -69,7 +69,17 @@ const uploadSingleFile = (fieldName, options) => {
   return (req, res, next) => {
     upload(req, res, (err) => {
       if (err) {
-        return successRes(res, 400, false, err);
+        if (err instanceof multer.MulterError) {
+          if (err.code === "LIMIT_FILE_SIZE") {
+            const message = `File too large. Maximum size is ${
+              options.fileSize / 1000000
+            }MB.`;
+            return successRes(res, 400, false, message);
+          }
+          return successRes(res, 400, false, err.message);
+        } else {
+          return successRes(res, 400, false, err.message);
+        }
       }
       next();
     });
@@ -80,30 +90,19 @@ const uploadSingleFile = (fieldName, options) => {
 const uploadMultipleFiles = (fieldName, maxCount, options) => {
   const upload = createMulter(options).array(fieldName, maxCount);
   return (req, res, next) => {
-    console.log(req.file);
-    console.log(req.files);
-
-    // Check file count
-    if (req.files && req.files.length > maxCount) {
-      return successRes(
-        res,
-        400,
-        false,
-        `No more than ${maxCount} files are allowed.`
-      );
-    }
-    if (req.files && req.files.length < minCount) {
-      return successRes(
-        res,
-        400,
-        false,
-        `At least ${minCount} files are required.`
-      );
-    }
-
     upload(req, res, (err) => {
-      if (err) {
+        if (err) {
         if (err instanceof multer.MulterError) {
+          if (err.code === "LIMIT_FILE_SIZE") {
+            const message = `File too large. Maximum size is ${
+              options.fileSize / 1000000
+            }MB.`;
+            return successRes(res, 400, false, message);
+          }
+          if (err.code === "LIMIT_UNEXPECTED_FILE") {
+            const message = `Too many files. Maximum allowed is ${maxCount}.`;
+            return successRes(res, 400, false, message);
+          }
           return successRes(res, 400, false, err.message);
         } else {
           return successRes(res, 400, false, err.message);
@@ -117,6 +116,7 @@ const uploadMultipleFiles = (fieldName, maxCount, options) => {
 /* Admin Section */
 module.exports.uploadAdminAvatar = uploadSingleFile("image", {
   fileTypes: /jpeg|jpg|png/,
+  fileSize: 3000000,
   folder: "uploads/admin_profile_pictures",
 });
 
@@ -132,6 +132,7 @@ module.exports.uploadNewsAvatar = uploadSingleFile("image", {
 
 module.exports.uploadCarouselImages = uploadMultipleFiles("images", 5, {
   fileTypes: /jpeg|jpg|png/,
+  fileSize: 3000000,
   folder: "uploads/carousel_pictures",
 });
 
