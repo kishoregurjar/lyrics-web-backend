@@ -388,18 +388,26 @@ module.exports.getAlbumSong = async (req, res) => {
 
 // =====================================Lyrics Find Apis=======================================================
 
-//for user
+//for user and admin both
 module.exports.searchLyricsFindSongs = async (req, res) => {
     const { type, query } = req.body;
-    console.log(type, query)
 
     const validTypes = ['artist', 'track', 'album'];
     if (!validTypes.includes(type)) {
         return res.status(400).json({ success: false, message: 'Invalid search type' });
     }
 
+    let apiUrl = '';
+    if (type === 'track') {
+        apiUrl = `https://api.lyricfind.com/search.do?apikey=9d2330933c7ca5d0c36aa228f372d87b&territory=IN&reqtype=default&searchtype=track&lyrics=${query}`;
+    } else if (type === 'artist') {
+        apiUrl = `https://api.lyricfind.com/search.do?reqtype=default&apikey=9d2330933c7ca5d0c36aa228f372d87b&territory=IN&searchtype=track&artist=${query}`;
+    } else if (type === 'album') {
+        apiUrl = `https://api.lyricfind.com/search.do?reqtype=default&apikey=9d2330933c7ca5d0c36aa228f372d87b&territory=IN&searchtype=track&album=${query}`;
+    }
+
     try {
-        const searchResponse = await axios.get(`https://api.lyricfind.com/search.do?apikey=9d2330933c7ca5d0c36aa228f372d87b&territory=IN&reqtype=default&searchtype=${type}&lyrics=${query}`);
+        const searchResponse = await axios.get(apiUrl);
 
         xml2js.parseString(searchResponse.data, { explicitArray: false }, (err, result) => {
             if (err) {
@@ -415,6 +423,39 @@ module.exports.searchLyricsFindSongs = async (req, res) => {
         return res.status(500).json({ success: false, message: 'Internal Server Error' });
     }
 }
+
+const http = require('https');
+function test() {
+
+    const options = {
+        method: 'GET',
+        hostname: 'deezerdevs-deezer.p.rapidapi.com',
+        port: null,
+        path: '/artist/Arijit',
+        headers: {
+            'x-rapidapi-key': 'f6cb5b467emshafafcc1336f6f85p10988cjsn8c14ca593bd2',
+            'x-rapidapi-host': 'deezerdevs-deezer.p.rapidapi.com'
+        }
+    };
+
+    const req = http.request(options, function (res) {
+        const chunks = [];
+
+        res.on('data', function (chunk) {
+            chunks.push(chunk);
+        });
+
+        res.on('end', function () {
+            const body = Buffer.concat(chunks);
+            console.log(body.toString());
+        });
+    });
+
+    req.end();
+}
+
+test()
+
 
 
 
