@@ -414,6 +414,7 @@ module.exports.searchLyricsFindSongs = async (req, res) => {
                 console.error('Error parsing XML:', err);
                 return res.status(500).json({ success: false, message: 'Error parsing response from API' });
             }
+            return successRes(res, 200, true, "Search Results", result );
 
             return res.status(200).json({ success: true, data: result });
         });
