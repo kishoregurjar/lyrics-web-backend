@@ -10,7 +10,7 @@ const Testimonial = require("../models/testimonialModel");
 const { USER_AVATAR } = require("../utils/constants");
 
 module.exports.createUser = async (req, res, next) => {
-  let { firstName, lastName, email, password, mobile } = req.body;
+  let { firstName, lastName, email, password, mobile, avatar } = req.body;
   email = email.toLowerCase();
   if (!firstName || !lastName || !email || !password || !mobile) {
     return catchRes(res, "All fields are required.");
@@ -41,6 +41,7 @@ module.exports.createUser = async (req, res, next) => {
       email,
       password: hashedPassword,
       mobile,
+      avatar
     });
 
     const user = await newUser.save({ session });
