@@ -1,3 +1,5 @@
+const fs = require("fs").promises;
+const path = require("path");
 const bcrypt = require("bcrypt");
 const mongoose = require("mongoose");
 const jwt = require("jsonwebtoken");
@@ -694,13 +696,43 @@ module.exports.deleteNews = async (req, res) => {
       return successRes(res, 404, false, "Admin Not Found");
     }
 
-    const news = await News.findByIdAndDelete(newsId, {
-      deletedAt: Date.now(),
-    });
-
+    const news = await News.findById(newsId).session(session);
     if (!news) {
+      await session.abortTransaction();
       return successRes(res, 404, false, "News Not Found");
     }
+
+    // Get the image path from the news document
+    const coverImgUrl = news.coverImg;
+
+    // Extract the file path from the URL
+    const coverImgPath = coverImgUrl.replace("http://localhost:3007/", "");
+
+    // Construct the full path to the image
+    const fullPath = path.resolve(__dirname, "../../uploads", coverImgPath);
+
+    // Log the paths for debugging
+    console.log(`Cover Image URL: ${coverImgUrl}`);
+    console.log(`Cover Image Path: ${coverImgPath}`);
+    console.log(`Full Path: ${fullPath}`);
+
+    // Delete news from the database
+    await News.findByIdAndDelete(newsId, { session });
+
+    // Check if file exists before attempting to delete it
+    try {
+      await fs.access(fullPath);
+      await fs.unlink(fullPath);
+      console.log(`File deleted successfully: ${fullPath}`);
+    } catch (err) {
+      if (err.code === "ENOENT") {
+        console.warn(`File not found, skipping deletion: ${fullPath}`);
+      } else {
+        console.error(`Error deleting file ${fullPath}:`, err);
+        // Do not abort the transaction for file deletion errors
+      }
+    }
+
     await session.commitTransaction();
 
     return successRes(res, 200, true, "News Deleted Successfully", news);
