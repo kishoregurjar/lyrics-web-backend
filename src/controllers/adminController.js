@@ -444,33 +444,52 @@ module.exports.deleteTestimonial = async (req, res) => {
   try {
     const { tid } = req.query;
 
-    const deletedTestimonial = await Testimonial.findByIdAndUpdate(
-      tid,
-      { deletedAt: Date.now() },
-      { new: true, session }
-    );
-
-    if (!deletedTestimonial) {
+    // Find the testimonial document and start a session
+    const testimonial = await Testimonial.findById(tid).session(session);
+    if (!testimonial) {
       await session.abortTransaction();
-      session.endSession();
       return successRes(res, 404, false, "Testimonial Not Found");
     }
 
-    await session.commitTransaction();
-    session.endSession();
+    // Get the image path from the testimonial document
+    const avatarImgUrl = testimonial.avatar;
 
-    return successRes(
-      res,
-      200,
-      true,
-      "Testimonial Soft Deleted Successfully",
-      deletedTestimonial
-    );
+    // Extract the file path from the URL
+    const avatarImgPath = avatarImgUrl.replace("http://localhost:3007/", "");
+
+    // Construct the full path to the image
+    const fullPath = path.resolve(__dirname, "../../uploads", avatarImgPath);
+
+    // Log the paths for debugging
+    console.log(`Avatar Image URL: ${avatarImgUrl}`);
+    console.log(`Avatar Image Path: ${avatarImgPath}`);
+    console.log(`Full Path: ${fullPath}`);
+
+    // Check if file exists before attempting to delete it
+    try {
+      await fs.access(fullPath);
+      await fs.unlink(fullPath);
+      console.log(`File deleted successfully: ${fullPath}`);
+    } catch (err) {
+      if (err.code === "ENOENT") {
+        console.warn(`File not found, skipping deletion: ${fullPath}`);
+      } else {
+        console.error(`Error deleting file ${fullPath}:`, err);
+        // Do not abort the transaction for file deletion errors
+      }
+    }
+
+    // Hard delete the testimonial document from the database
+    await Testimonial.findByIdAndDelete(tid, { session });
+
+    await session.commitTransaction();
+    return successRes(res, 200, true, "Testimonial Deleted Successfully");
   } catch (error) {
     await session.abortTransaction();
-    session.endSession();
-    console.error("Error Soft Deleting Testimonial:", error);
+    console.error("Error Deleting Testimonial:", error);
     return catchRes(res, error);
+  } finally {
+    session.endSession();
   }
 };
 
