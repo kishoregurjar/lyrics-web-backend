@@ -746,12 +746,12 @@ module.exports.getLyrics = async (req, res) => {
 
     const url1 = `${apiType}?apikey=${apiKey}&${territory}&${reqType}&displaykey=${displayKey}&trackid=isrc:${trackId}&${output}`;
 
-    console.log(url1);
+    // console.log(url1);
 
     // Make the request to LyricFind API
     const response = await axios.get(url1);
 
-    console.log(response.data);
+    // console.log(response.data);
 
     if (response.data && response.data) {
       return successRes(
@@ -781,12 +781,12 @@ module.exports.getTopLyrics = async (req, res) => {
 
     const url1 = `${apiType}?apikey=${lrcKey}&${territory}&${reqType}&displaykey=${apiKey}`;
 
-    console.log(url1);
+    // console.log(url1);
 
     // Make the request to LyricFind API
     const response = await axios.get(url1);
 
-    console.log(response.data);
+    // console.log(response.data);
 
     if (response.data && response.data.track && response.data.track.lyrics) {
       const lyrics = response.data.track.lyrics;
@@ -822,18 +822,18 @@ module.exports.getSearchLyrics = async (req, res) => {
 
     // URL-encode the track name and replace spaces with '+'
     const encodedTrackName = encodeURIComponent(query).replace(/%20/g, "+");
-    console.log(encodedTrackName);
+    // console.log(encodedTrackName);
     const lyrics = `lyrics=${encodedTrackName}`;
 
     // Construct the URL
     const url = `${apiType}?apikey=${searchKey}&${territory}&${reqType}&displaykey=${apiKey}&${output}&searchtype=track&alltracks=no&${lyrics}`;
 
-    console.log(url);
+    // console.log(url);
 
     // Make the request to LyricFind API
     const { status, data } = await axios.get(url);
 
-    console.log(data);
+    // console.log(data);
 
     if (status === 200 && data && data.tracks) {
       return successRes(
