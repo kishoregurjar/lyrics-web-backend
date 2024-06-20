@@ -208,36 +208,44 @@ module.exports.getLyricsAdmin = async (req, res) => {
     const { isrcKey } = req.body;
     const territory = "IN";
     const apiKey = process.env.LF_API_KEY || "5f99ebb429f9d2b9e13998f93943b34a"; // Use environment variable
-    const url = `https://api.lyricfind.com/lyric.do?apikey=${apiKey}&territory=${territory}&reqtype=default&trackid=isrc:${isrcKey}`;
+    const url = `https://api.lyricfind.com/lyric.do?apikey=${apiKey}&territory=${territory}&reqtype=default&trackid=isrc:${isrcKey}&output=json`;
 
-    // console.log(url, "url")
+    console.log(url, "url");
 
     const response = await axios.get(url);
-    const xmlData = response.data;
+
+    console.log(response.data.track, "response data json" + Date.now());
+
+    // const xmlData = response.data;
     // console.log(xmlData)
 
-    const parser = new xml2js.Parser();
-    const jsonData = await parser.parseStringPromise(xmlData);
+    // const parser = new xml2js.Parser();
+    // const jsonData = await parser.parseStringPromise(xmlData);
 
-    if (
-      !jsonData ||
-      !jsonData.lyricfind ||
-      !jsonData.lyricfind.track ||
-      jsonData.lyricfind.track.length === 0
-    ) {
-      return successRes(res, 404, false, "No Lyrics Found", null);
+    // if (
+    //   !jsonData ||
+    //   !jsonData.lyricfind ||
+    //   !jsonData.lyricfind.track ||
+    //   jsonData.lyricfind.track.length === 0
+    // ) {
+    //   return successRes(res, 404, false, "No Lyrics Found", null);
+    // }
+
+    // const track = jsonData.lyricfind.track[0];
+    // let lyrics = track.lyrics[0];
+
+    let resObj = {};
+
+    if (response && response.data && response.data.track) {
+      // resObj = {
+      //   title: response.data.track.title,
+      //   artist: response.data.track.artist.name,
+      //   lyrics: response.data.track.lyrics,
+      // };
+      resObj = response.data.track;
     }
 
-    const track = jsonData.lyricfind.track[0];
-    let lyrics = track.lyrics[0];
-
-    const resObj = {
-      title: track?.title[0],
-      artist: track?.artists[0].artist[0]["_"],
-      lyrics: lyrics,
-    };
-
-    return successRes(res, 200, true, "Lyrics fectched Successfully", resObj);
+    return successRes(res, 200, true, "Lyrics Fetched Successfully", resObj);
   } catch (error) {
     console.error("Error fetching song details:", error.message);
     res.status(500).send({ error: error.message });
@@ -356,11 +364,14 @@ module.exports.getLyricsUser = async (req, res) => {
     // console.log(isrcKey, "isrckey");
     const territory = "IN";
     const apiKey = process.env.LF_API_KEY || "5f99ebb429f9d2b9e13998f93943b34a"; // Use environment variable
-    const url = `https://api.lyricfind.com/lyric.do?apikey=${apiKey}&territory=${territory}&reqtype=default&trackid=isrc:${isrcKey}`;
+    const url = `https://api.lyricfind.com/lyric.do?apikey=${apiKey}&territory=${territory}&reqtype=default&trackid=isrc:${isrcKey}&output=json`;
 
     // console.log(url, "url");
 
     const response = await axios.get(url);
+
+    // console.log(response, "response json ");
+
     const xmlData = response.data;
     // console.log(xmlData);
 
