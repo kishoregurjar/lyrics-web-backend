@@ -293,7 +293,6 @@ module.exports.uploadAdminAvatar = async (req, res) => {
 
     const adminId = req.user._id;
     const filePath = `${ADMIN_AVATAR}${req.file.filename}`;
-    console.log(req.file);
 
     const updatedAdmin = await Admin.findByIdAndUpdate(
       adminId,
@@ -451,35 +450,23 @@ module.exports.deleteTestimonial = async (req, res) => {
       return successRes(res, 404, false, "Testimonial Not Found");
     }
 
-    // Get the image path from the testimonial document
     const avatarImgUrl = testimonial.avatar;
 
-    // Extract the file path from the URL
     const avatarImgPath = avatarImgUrl.replace("http://localhost:3007/", "");
 
-    // Construct the full path to the image
     const fullPath = path.resolve(__dirname, "../../uploads", avatarImgPath);
 
-    // Log the paths for debugging
-    console.log(`Avatar Image URL: ${avatarImgUrl}`);
-    console.log(`Avatar Image Path: ${avatarImgPath}`);
-    console.log(`Full Path: ${fullPath}`);
-
-    // Check if file exists before attempting to delete it
     try {
       await fs.access(fullPath);
       await fs.unlink(fullPath);
-      console.log(`File deleted successfully: ${fullPath}`);
     } catch (err) {
       if (err.code === "ENOENT") {
         console.warn(`File not found, skipping deletion: ${fullPath}`);
       } else {
         console.error(`Error deleting file ${fullPath}:`, err);
-        // Do not abort the transaction for file deletion errors
       }
     }
 
-    // Hard delete the testimonial document from the database
     await Testimonial.findByIdAndDelete(tid, { session });
 
     await session.commitTransaction();
@@ -495,7 +482,6 @@ module.exports.deleteTestimonial = async (req, res) => {
 
 module.exports.getTestimonialsList = async (req, res) => {
   try {
-    // Extract query parameters for pagination, sorting, and filtering
     const {
       page = 1,
       limit = 10,
@@ -504,18 +490,15 @@ module.exports.getTestimonialsList = async (req, res) => {
     } = req.query;
     const skip = (page - 1) * limit;
 
-    // Filter to include testimonials where deletedAt is null or does not exist
     const filter = {
       $or: [{ deletedAt: null }, { deletedAt: { $exists: false } }],
     };
 
-    // Find testimonials with pagination and sorting
     const testimonials = await Testimonial.find(filter)
       .sort({ [sortBy]: sortOrder === "desc" ? -1 : 1 })
       .skip(parseInt(skip))
       .limit(parseInt(limit));
 
-    // Count the total number of testimonials for pagination
     const totalTestimonials = await Testimonial.countDocuments(filter);
 
     return successRes(res, 200, true, "Testimonials List", {
@@ -537,8 +520,6 @@ module.exports.uploadTestimonialAvatar = async (req, res) => {
     }
 
     const filePath = `${TESTIMONIAL_AVATAR}${req.file.filename}`;
-    console.log(req.file);
-
     return successRes(
       res,
       200,
@@ -730,10 +711,6 @@ module.exports.deleteNews = async (req, res) => {
     // Construct the full path to the image
     const fullPath = path.resolve(__dirname, "../../uploads", coverImgPath);
 
-    // Log the paths for debugging
-    console.log(`Cover Image URL: ${coverImgUrl}`);
-    console.log(`Cover Image Path: ${coverImgPath}`);
-    console.log(`Full Path: ${fullPath}`);
 
     // Delete news from the database
     await News.findByIdAndDelete(newsId, { session });
@@ -742,7 +719,6 @@ module.exports.deleteNews = async (req, res) => {
     try {
       await fs.access(fullPath);
       await fs.unlink(fullPath);
-      console.log(`File deleted successfully: ${fullPath}`);
     } catch (err) {
       if (err.code === "ENOENT") {
         console.warn(`File not found, skipping deletion: ${fullPath}`);
@@ -771,7 +747,6 @@ module.exports.uploadNewsAvatar = async (req, res) => {
     }
 
     const filePath = `${NEWS_AVATAR}${req.file.filename}`;
-    console.log(req.file);
 
     return successRes(res, 200, true, "News Avatar Uploaded Successfully", {
       path: filePath,
@@ -797,12 +772,8 @@ module.exports.getLyrics = async (req, res) => {
 
     const url1 = `${apiType}?apikey=${apiKey}&${territory}&${reqType}&displaykey=${displayKey}&trackid=isrc:${trackId}&${output}`;
 
-    // console.log(url1);
 
-    // Make the request to LyricFind API
     const response = await axios.get(url1);
-
-    // console.log(response.data);
 
     if (response.data && response.data) {
       return successRes(
@@ -832,12 +803,7 @@ module.exports.getTopLyrics = async (req, res) => {
 
     const url1 = `${apiType}?apikey=${lrcKey}&${territory}&${reqType}&displaykey=${apiKey}`;
 
-    // console.log(url1);
-
-    // Make the request to LyricFind API
     const response = await axios.get(url1);
-
-    // console.log(response.data);
 
     if (response.data && response.data.track && response.data.track.lyrics) {
       const lyrics = response.data.track.lyrics;
@@ -873,18 +839,13 @@ module.exports.getSearchLyrics = async (req, res) => {
 
     // URL-encode the track name and replace spaces with '+'
     const encodedTrackName = encodeURIComponent(query).replace(/%20/g, "+");
-    // console.log(encodedTrackName);
     const lyrics = `lyrics=${encodedTrackName}`;
 
     // Construct the URL
     const url = `${apiType}?apikey=${searchKey}&${territory}&${reqType}&displaykey=${apiKey}&${output}&searchtype=track&alltracks=no&${lyrics}`;
 
-    // console.log(url);
-
     // Make the request to LyricFind API
     const { status, data } = await axios.get(url);
-
-    // console.log(data);
 
     if (status === 200 && data && data.tracks) {
       return successRes(
