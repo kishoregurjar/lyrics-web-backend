@@ -126,7 +126,7 @@ module.exports.forgetPassword = async (req, res) => {
       }
     );
 
-    const resetPassLink = `${process.env.FORGET_PASSWORD}/${resetToken}`;
+    const resetPassLink = `${process.env.FORGET_PASSWORD_ADMIN}/${resetToken}`;
 
     genericMail(
       existingAdmin.email,
