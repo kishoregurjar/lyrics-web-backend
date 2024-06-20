@@ -1,3 +1,5 @@
+const fs = require("fs").promises;
+const path = require("path");
 const bcrypt = require("bcrypt");
 const mongoose = require("mongoose");
 const jwt = require("jsonwebtoken");
@@ -291,7 +293,6 @@ module.exports.uploadAdminAvatar = async (req, res) => {
 
     const adminId = req.user._id;
     const filePath = `${ADMIN_AVATAR}${req.file.filename}`;
-    console.log(req.file);
 
     const updatedAdmin = await Admin.findByIdAndUpdate(
       adminId,
@@ -442,39 +443,45 @@ module.exports.deleteTestimonial = async (req, res) => {
   try {
     const { tid } = req.query;
 
-    const deletedTestimonial = await Testimonial.findByIdAndUpdate(
-      tid,
-      { deletedAt: Date.now() },
-      { new: true, session }
-    );
-
-    if (!deletedTestimonial) {
+    // Find the testimonial document and start a session
+    const testimonial = await Testimonial.findById(tid).session(session);
+    if (!testimonial) {
       await session.abortTransaction();
-      session.endSession();
       return successRes(res, 404, false, "Testimonial Not Found");
     }
 
-    await session.commitTransaction();
-    session.endSession();
+    const avatarImgUrl = testimonial.avatar;
 
-    return successRes(
-      res,
-      200,
-      true,
-      "Testimonial Soft Deleted Successfully",
-      deletedTestimonial
-    );
+    const avatarImgPath = avatarImgUrl.replace("http://localhost:3007/", "");
+
+    const fullPath = path.resolve(__dirname, "../../uploads", avatarImgPath);
+
+    try {
+      await fs.access(fullPath);
+      await fs.unlink(fullPath);
+    } catch (err) {
+      if (err.code === "ENOENT") {
+        console.warn(`File not found, skipping deletion: ${fullPath}`);
+      } else {
+        console.error(`Error deleting file ${fullPath}:`, err);
+      }
+    }
+
+    await Testimonial.findByIdAndDelete(tid, { session });
+
+    await session.commitTransaction();
+    return successRes(res, 200, true, "Testimonial Deleted Successfully");
   } catch (error) {
     await session.abortTransaction();
-    session.endSession();
-    console.error("Error Soft Deleting Testimonial:", error);
+    console.error("Error Deleting Testimonial:", error);
     return catchRes(res, error);
+  } finally {
+    session.endSession();
   }
 };
 
 module.exports.getTestimonialsList = async (req, res) => {
   try {
-    // Extract query parameters for pagination, sorting, and filtering
     const {
       page = 1,
       limit = 10,
@@ -483,18 +490,15 @@ module.exports.getTestimonialsList = async (req, res) => {
     } = req.query;
     const skip = (page - 1) * limit;
 
-    // Filter to include testimonials where deletedAt is null or does not exist
     const filter = {
       $or: [{ deletedAt: null }, { deletedAt: { $exists: false } }],
     };
 
-    // Find testimonials with pagination and sorting
     const testimonials = await Testimonial.find(filter)
       .sort({ [sortBy]: sortOrder === "desc" ? -1 : 1 })
       .skip(parseInt(skip))
       .limit(parseInt(limit));
 
-    // Count the total number of testimonials for pagination
     const totalTestimonials = await Testimonial.countDocuments(filter);
 
     return successRes(res, 200, true, "Testimonials List", {
@@ -516,8 +520,6 @@ module.exports.uploadTestimonialAvatar = async (req, res) => {
     }
 
     const filePath = `${TESTIMONIAL_AVATAR}${req.file.filename}`;
-    console.log(req.file);
-
     return successRes(
       res,
       200,
@@ -694,13 +696,38 @@ module.exports.deleteNews = async (req, res) => {
       return successRes(res, 404, false, "Admin Not Found");
     }
 
-    const news = await News.findByIdAndDelete(newsId, {
-      deletedAt: Date.now(),
-    });
-
+    const news = await News.findById(newsId).session(session);
     if (!news) {
+      await session.abortTransaction();
       return successRes(res, 404, false, "News Not Found");
     }
+
+    // Get the image path from the news document
+    const coverImgUrl = news.coverImg;
+
+    // Extract the file path from the URL
+    const coverImgPath = coverImgUrl.replace("http://localhost:3007/", "");
+
+    // Construct the full path to the image
+    const fullPath = path.resolve(__dirname, "../../uploads", coverImgPath);
+
+
+    // Delete news from the database
+    await News.findByIdAndDelete(newsId, { session });
+
+    // Check if file exists before attempting to delete it
+    try {
+      await fs.access(fullPath);
+      await fs.unlink(fullPath);
+    } catch (err) {
+      if (err.code === "ENOENT") {
+        console.warn(`File not found, skipping deletion: ${fullPath}`);
+      } else {
+        console.error(`Error deleting file ${fullPath}:`, err);
+        // Do not abort the transaction for file deletion errors
+      }
+    }
+
     await session.commitTransaction();
 
     return successRes(res, 200, true, "News Deleted Successfully", news);
@@ -720,7 +747,6 @@ module.exports.uploadNewsAvatar = async (req, res) => {
     }
 
     const filePath = `${NEWS_AVATAR}${req.file.filename}`;
-    console.log(req.file);
 
     return successRes(res, 200, true, "News Avatar Uploaded Successfully", {
       path: filePath,
@@ -746,12 +772,8 @@ module.exports.getLyrics = async (req, res) => {
 
     const url1 = `${apiType}?apikey=${apiKey}&${territory}&${reqType}&displaykey=${displayKey}&trackid=isrc:${trackId}&${output}`;
 
-    console.log(url1);
 
-    // Make the request to LyricFind API
     const response = await axios.get(url1);
-
-    console.log(response.data);
 
     if (response.data && response.data) {
       return successRes(
@@ -781,12 +803,7 @@ module.exports.getTopLyrics = async (req, res) => {
 
     const url1 = `${apiType}?apikey=${lrcKey}&${territory}&${reqType}&displaykey=${apiKey}`;
 
-    console.log(url1);
-
-    // Make the request to LyricFind API
     const response = await axios.get(url1);
-
-    console.log(response.data);
 
     if (response.data && response.data.track && response.data.track.lyrics) {
       const lyrics = response.data.track.lyrics;
@@ -822,18 +839,13 @@ module.exports.getSearchLyrics = async (req, res) => {
 
     // URL-encode the track name and replace spaces with '+'
     const encodedTrackName = encodeURIComponent(query).replace(/%20/g, "+");
-    console.log(encodedTrackName);
     const lyrics = `lyrics=${encodedTrackName}`;
 
     // Construct the URL
     const url = `${apiType}?apikey=${searchKey}&${territory}&${reqType}&displaykey=${apiKey}&${output}&searchtype=track&alltracks=no&${lyrics}`;
 
-    console.log(url);
-
     // Make the request to LyricFind API
     const { status, data } = await axios.get(url);
-
-    console.log(data);
 
     if (status === 200 && data && data.tracks) {
       return successRes(

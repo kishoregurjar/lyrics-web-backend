@@ -23,6 +23,9 @@ const userSignupSchema = Joi.object({
         'string.empty': 'Mobile number is required',
         'string.pattern.base': 'Mobile number must be a 10-digit number',
     }),
+    avatar: Joi.string().trim().required().messages({
+        'string.empty': 'Mobile number is required',
+    }),
 });
 
 const userLoginSchema = Joi.object({

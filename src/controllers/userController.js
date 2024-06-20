@@ -10,7 +10,7 @@ const Testimonial = require("../models/testimonialModel");
 const { USER_AVATAR } = require("../utils/constants");
 
 module.exports.createUser = async (req, res, next) => {
-  let { firstName, lastName, email, password, mobile } = req.body;
+  let { firstName, lastName, email, password, mobile, avatar } = req.body;
   email = email.toLowerCase();
   if (!firstName || !lastName || !email || !password || !mobile) {
     return catchRes(res, "All fields are required.");
@@ -41,6 +41,7 @@ module.exports.createUser = async (req, res, next) => {
       email,
       password: hashedPassword,
       mobile,
+      avatar
     });
 
     const user = await newUser.save({ session });
@@ -122,7 +123,6 @@ module.exports.uploadProfilePicture = async (req, res) => {
     }
 
     const filePath = `${USER_AVATAR}${req.file.filename}`;
-    console.log(req.file);
 
     return successRes(res, 200, true, "Profile Picture Uploaded Successfully", {
       path: filePath,
@@ -348,138 +348,3 @@ module.exports.getTestimonial = async (req, res) => {
     return catchRes(res, error);
   }
 };
-
-// const axios = require('axios');
-
-// async function getAccessToken() {
-//   const { SPOTIFY_CLIENT_ID, SPOTIFY_CLIENT_SECRET } = process.env;
-//   const token = Buffer.from(`${SPOTIFY_CLIENT_ID}:${SPOTIFY_CLIENT_SECRET}`).toString('base64');
-
-//   const response = await axios.post('https://accounts.spotify.com/api/token', 'grant_type=client_credentials', {
-//     headers: {
-//       'Authorization': `Basic ${token}`,
-//       'Content-Type': 'application/x-www-form-urlencoded'
-//     }
-//   });
-
-//   return response.data.access_token;
-// }
-
-// async function getTrackISRCByName(trackName) {
-//   const accessToken = await getAccessToken();
-
-//   const searchResponse = await axios.get('https://api.spotify.com/v1/search', {
-//     headers: {
-//       'Authorization': `Bearer ${accessToken}`
-//     },
-//     params: {
-//       q: trackName,
-//       type: 'track',
-//       limit: 1
-//     }
-//   });
-
-//   if (searchResponse.data.tracks.items.length === 0) {
-//     throw new Error('Track not found');
-//   }
-//   // console.log(searchResponse.data.tracks, "11111111")
-//   const trackId = searchResponse.data.tracks.items[0].id;
-
-//   const trackResponse = await axios.get(`https://api.spotify.com/v1/tracks/${trackId}`, {
-//     headers: {
-//       'Authorization': `Bearer ${accessToken}`
-//     }
-//   });
-
-//   const track = trackResponse.data;
-//   console.log(track.album, "track")
-//   return track.external_ids.isrc;
-// }
-
-// (async () => {
-//   try {
-//     const trackName = 'vande matram';
-//     const isrc = await getTrackISRCByName(trackName);
-//     console.log(`ISRC: ${isrc}`);
-//   } catch (error) {
-//     console.error('Error fetching ISRC:', error);
-//   }
-// })();
-
-// module.exports.uploadProfilePicture = async (req, res) => {
-//   try {
-//     if (!req.file) {
-//       return successRes(res, 400, false, "No File Uploaded");
-//     }
-
-//     const filePath = `http://localhost:3007/uploads/profile_pictures/${req.file.filename}`;
-//     console.log(req.file);
-
-//     if (req.headers.authorization) {
-//       let token = req.headers.authorization;
-//       if (!token) {
-//         return successRes(res, 401, false, "Access Denied: Token Not Provided");
-//       }
-
-//       let decoded;
-
-//       try {
-//         decoded = jsonwebtoken.verify(token, SECRET_KEY);
-//       } catch (err) {
-//         if (err.name === "TokenExpiredError") {
-//           return successRes(res, 401, false, "Session Timeout: Please Login Again");
-//         }
-//         return successRes(res, 401, false, "Access Denied: Invalid Token");
-//       }
-
-//       if (!decoded) {
-//         return successRes(res, 401, false, "Access Denied: Invalid Token");
-//       }
-
-//       const user = await User.findById(decoded._id);
-//       if (!user) {
-//         return successRes(res, 404, false, "User Not Found");
-//       }
-//       const existingUser = await userModel.findById(user._id);
-
-//       if (existingUser) {
-//         // Update avatar for existing user
-//         const updatedUser = await userModel.findByIdAndUpdate(
-//           user._id,
-//           { avatar: filePath },
-//           { new: true }
-//         );
-
-//         if (!updatedUser) {
-//           return successRes(res, 404, false, "User Not Found");
-//         }
-
-//         return successRes(
-//           res,
-//           200,
-//           true,
-//           "Profile Picture Updated Successfully",
-//           {
-//             path: filePath,
-//             updatedUser,
-//           }
-//         );
-//       } else {
-//         return successRes(res, 404, false, "User Not Found");
-//       }
-//     } else {
-//       return successRes(
-//         res,
-//         200,
-//         true,
-//         "Profile Picture Uploaded Successfully",
-//         {
-//           path: filePath,
-//         }
-//       );
-//     }
-//   } catch (error) {
-//     console.error("Error Uploading Profile Picture:", error);
-//     return catchRes(res, error);
-//   }
-// };
