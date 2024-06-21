@@ -210,14 +210,18 @@ module.exports.getLyricsAdmin = async (req, res) => {
         const url = `https://api.lyricfind.com/lyric.do?apikey=${apiKey}&territory=${territory}&reqtype=default&trackid=isrc:${isrcKey}&output=json`;
 
         const response = await axios.get(url);
+        console.log(response.data, "response");
 
         let resObj = {};
 
-        if (response && response.data && response.data.track) {
+        if (response?.data?.response?.code === 204) {
+            return successRes(res, 404, false, "Lyrics Not Found", null)
+        } else if (response && response.data && response.data.track) {
             resObj = response.data.track;
+            return successRes(res, 200, true, "Lyrics Fetched Successfully", resObj);
+        } else {
+            return res.status(500).send({ error: "Unexpected response format from lyrics API" });
         }
-
-        return successRes(res, 200, true, "Lyrics Fetched Successfully", resObj);
     } catch (error) {
         console.error("Error fetching song details:", error.message);
         res.status(500).send({ error: error.message });
