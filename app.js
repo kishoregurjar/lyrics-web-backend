@@ -13,7 +13,7 @@ const indexRoute = require("./src/routes/indexRoute");
 const { winstonLogMiddleware } = require("./src/middlewares/loggerMiddleware");
 
 let PORT = process.env.APP_PORT || 3007;
-app.set('trust proxy', true);
+app.set('trust proxy', 1);
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 100,
@@ -23,8 +23,8 @@ app.use(limiter);
 app.use(compression());
 
 app.use(express.static("uploads"));
-app.use(cors());
 app.use(helmet({ crossOriginResourcePolicy: false }));
+app.use(cors());
 app.use(express.json());
 app.use(
   express.urlencoded({
