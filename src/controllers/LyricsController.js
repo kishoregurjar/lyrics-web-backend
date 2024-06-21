@@ -209,6 +209,10 @@ module.exports.getLyricsAdmin = async (req, res) => {
         const apiKey = process.env.LF_API_KEY || "5f99ebb429f9d2b9e13998f93943b34a"; // Use environment variable
         const url = `https://api.lyricfind.com/lyric.do?apikey=${apiKey}&territory=${territory}&reqtype=default&trackid=isrc:${isrcKey}&output=json`;
 
+        if (isrcKey == 'not-available') {
+            return successRes(res, 404, false, "Lyrics Not Found", null)
+        }
+
         const response = await axios.get(url);
         console.log(response.data, "response");
 
