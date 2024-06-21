@@ -197,7 +197,7 @@ module.exports.editUserProfile = async (req, res) => {
     await session.commitTransaction();
     session.endSession();
 
-    return successRes(res, 200, true, "User profile updated successfully.");
+    return successRes(res, 200, true, "User profile updated successfully.", user);
   } catch (error) {
     await session.abortTransaction();
     session.endSession();
