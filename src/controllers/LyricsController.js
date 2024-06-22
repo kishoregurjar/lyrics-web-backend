@@ -3,6 +3,7 @@ const { catchRes, successRes, swrRes } = require("../utils/response");
 const mongoose = require("mongoose");
 const axios = require("axios");
 const hotAlbmubModel = require("../models/hotAlbmubModel");
+const topChartModel = require('../models/topChartModel')
 const xml2js = require("xml2js");
 
 async function getAccessToken() {
@@ -32,7 +33,7 @@ module.exports.addHotSong = async (req, res) => {
     session.startTransaction();
 
     try {
-        const { isrcKey } = req.body;
+        const { isrcKey, status } = req.body;
 
         const findAdmin = await Admin.findById(_id).session(session);
         if (!findAdmin) {
@@ -41,9 +42,13 @@ module.exports.addHotSong = async (req, res) => {
             return successRes(res, 401, false, "Admin Not Found");
         }
 
-        const checkLimit = await hotAlbmubModel.find().count();
-        if (checkLimit >= 8) {
-            return successRes(res, 400, false, "Can not add more than 8 Hot songs");
+        if (status.includes('hotAlbum')) {
+            const checkLimit = await hotAlbmubModel.find().count();
+            if (checkLimit >= 8) {
+                await session.abortTransaction();
+                session.endSession();
+                return successRes(res, 400, false, "Can not add more than 8 Hot songs");
+            }
         }
 
         const accessToken = await getAccessToken();
@@ -68,6 +73,8 @@ module.exports.addHotSong = async (req, res) => {
         );
 
         if (searchResponse.data.tracks.items.length === 0) {
+            await session.abortTransaction();
+            session.endSession();
             return successRes(res, 404, false, "Track Not Found");
         }
 
@@ -76,7 +83,7 @@ module.exports.addHotSong = async (req, res) => {
             ? track.available_markets.join(", ")
             : "Unknown";
 
-        const newHotAlbum = new hotAlbmubModel({
+        const albumData = {
             images: track.album.images.map((image) => image.url),
             name: track.name,
             releaseDate: track.album.release_date,
@@ -86,14 +93,27 @@ module.exports.addHotSong = async (req, res) => {
             genre: track.album.genres ? track.album.genres.join(", ") : "Unknown",
             duration: track.duration_ms,
             spotifyUrl: track.external_urls.spotify,
-            territory: territory, // Added territory field
-        });
+            territory: territory,
+        };
 
-        let saveAlbum = await newHotAlbum.save();
-        if (!saveAlbum) {
-            await session.abortTransaction();
-            session.endSession();
-            return swrRes(res);
+        if (status.includes('hotAlbum')) {
+            const newHotAlbum = new hotAlbmubModel(albumData);
+            let saveHotAlbum = await newHotAlbum.save({ session });
+            if (!saveHotAlbum) {
+                await session.abortTransaction();
+                session.endSession();
+                return swrRes(res);
+            }
+        }
+
+        if (status.includes('topChart')) {
+            const newTopChart = new topChartModel(albumData);
+            let saveTopChart = await newTopChart.save({ session });
+            if (!saveTopChart) {
+                await session.abortTransaction();
+                session.endSession();
+                return swrRes(res);
+            }
         }
 
         await session.commitTransaction();
@@ -102,8 +122,8 @@ module.exports.addHotSong = async (req, res) => {
             res,
             201,
             true,
-            "Hot song added successfully",
-            newHotAlbum
+            "Song added successfully",
+            albumData
         );
     } catch (error) {
         await session.abortTransaction();
@@ -111,6 +131,93 @@ module.exports.addHotSong = async (req, res) => {
         return catchRes(res, error);
     }
 };
+
+// module.exports.addHotSong = async (req, res) => {
+//     let { _id } = req.user;
+
+//     const session = await mongoose.startSession();
+//     session.startTransaction();
+
+//     try {
+//         const { isrcKey } = req.body;
+
+//         const findAdmin = await Admin.findById(_id).session(session);
+//         if (!findAdmin) {
+//             await session.abortTransaction();
+//             session.endSession();
+//             return successRes(res, 401, false, "Admin Not Found");
+//         }
+
+//         const checkLimit = await hotAlbmubModel.find().count();
+//         if (checkLimit >= 8) {
+//             return successRes(res, 400, false, "Can not add more than 8 Hot songs");
+//         }
+
+//         const accessToken = await getAccessToken();
+//         if (!accessToken) {
+//             await session.abortTransaction();
+//             session.endSession();
+//             return swrRes(res);
+//         }
+
+//         const searchResponse = await axios.get(
+//             "https://api.spotify.com/v1/search",
+//             {
+//                 headers: {
+//                     Authorization: `Bearer ${accessToken}`,
+//                 },
+//                 params: {
+//                     q: `isrc:${isrcKey}`,
+//                     type: "track",
+//                     limit: 1,
+//                 },
+//             }
+//         );
+
+//         if (searchResponse.data.tracks.items.length === 0) {
+//             return successRes(res, 404, false, "Track Not Found");
+//         }
+
+//         const track = searchResponse.data.tracks.items[0];
+//         const territory = track.available_markets
+//             ? track.available_markets.join(", ")
+//             : "Unknown";
+
+//         const newHotAlbum = new hotAlbmubModel({
+//             images: track.album.images.map((image) => image.url),
+//             name: track.name,
+//             releaseDate: track.album.release_date,
+//             artists: track.artists.map((artist) => artist.name),
+//             isrc: track.external_ids.isrc,
+//             album: track.album.name,
+//             genre: track.album.genres ? track.album.genres.join(", ") : "Unknown",
+//             duration: track.duration_ms,
+//             spotifyUrl: track.external_urls.spotify,
+//             territory: territory, // Added territory field
+//         });
+
+//         let saveAlbum = await newHotAlbum.save();
+//         if (!saveAlbum) {
+//             await session.abortTransaction();
+//             session.endSession();
+//             return swrRes(res);
+//         }
+
+//         await session.commitTransaction();
+//         session.endSession();
+//         return successRes(
+//             res,
+//             201,
+//             true,
+//             "Hot song added successfully",
+//             newHotAlbum
+//         );
+//     } catch (error) {
+//         await session.abortTransaction();
+//         session.endSession();
+//         return catchRes(res, error);
+//     }
+// };
 
 module.exports.getHotSongList = async (req, res) => {
     try {
@@ -457,33 +564,3 @@ module.exports.searchLyricsFindSongs = async (req, res) => {
             .json({ success: false, message: "Internal Server Error" });
     }
 };
-
-const http = require("https");
-function test() {
-    const options = {
-        method: "GET",
-        hostname: "deezerdevs-deezer.p.rapidapi.com",
-        port: null,
-        path: "/artist/Arijit",
-        headers: {
-            "x-rapidapi-key": "f6cb5b467emshafafcc1336f6f85p10988cjsn8c14ca593bd2",
-            "x-rapidapi-host": "deezerdevs-deezer.p.rapidapi.com",
-        },
-    };
-
-    const req = http.request(options, function (res) {
-        const chunks = [];
-
-        res.on("data", function (chunk) {
-            chunks.push(chunk);
-        });
-
-        res.on("end", function () {
-            const body = Buffer.concat(chunks);
-        });
-    });
-
-    req.end();
-}
-
-test();
