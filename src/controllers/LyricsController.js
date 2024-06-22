@@ -26,111 +26,111 @@ async function getAccessToken() {
     return response.data.access_token;
 }
 
-module.exports.addHotSong = async (req, res) => {
-    let { _id } = req.user;
+// module.exports.addHotSong = async (req, res) => {
+//     let { _id } = req.user;
 
-    const session = await mongoose.startSession();
-    session.startTransaction();
+//     const session = await mongoose.startSession();
+//     session.startTransaction();
 
-    try {
-        const { isrcKey, status } = req.body;
+//     try {
+//         const { isrcKey, status } = req.body;
 
-        const findAdmin = await Admin.findById(_id).session(session);
-        if (!findAdmin) {
-            await session.abortTransaction();
-            session.endSession();
-            return successRes(res, 401, false, "Admin Not Found");
-        }
+//         const findAdmin = await Admin.findById(_id).session(session);
+//         if (!findAdmin) {
+//             await session.abortTransaction();
+//             session.endSession();
+//             return successRes(res, 401, false, "Admin Not Found");
+//         }
 
-        if (status.includes('hotAlbum')) {
-            const checkLimit = await hotAlbmubModel.find().count();
-            if (checkLimit >= 8) {
-                await session.abortTransaction();
-                session.endSession();
-                return successRes(res, 400, false, "Can not add more than 8 Hot songs");
-            }
-        }
+//         if (status.includes('hotAlbum')) {
+//             const checkLimit = await hotAlbmubModel.find().count();
+//             if (checkLimit >= 8) {
+//                 await session.abortTransaction();
+//                 session.endSession();
+//                 return successRes(res, 400, false, "Can not add more than 8 Hot songs");
+//             }
+//         }
 
-        const accessToken = await getAccessToken();
-        if (!accessToken) {
-            await session.abortTransaction();
-            session.endSession();
-            return swrRes(res);
-        }
+//         const accessToken = await getAccessToken();
+//         if (!accessToken) {
+//             await session.abortTransaction();
+//             session.endSession();
+//             return swrRes(res);
+//         }
 
-        const searchResponse = await axios.get(
-            "https://api.spotify.com/v1/search",
-            {
-                headers: {
-                    Authorization: `Bearer ${accessToken}`,
-                },
-                params: {
-                    q: `isrc:${isrcKey}`,
-                    type: "track",
-                    limit: 1,
-                },
-            }
-        );
+//         const searchResponse = await axios.get(
+//             "https://api.spotify.com/v1/search",
+//             {
+//                 headers: {
+//                     Authorization: `Bearer ${accessToken}`,
+//                 },
+//                 params: {
+//                     q: `isrc:${isrcKey}`,
+//                     type: "track",
+//                     limit: 1,
+//                 },
+//             }
+//         );
 
-        if (searchResponse.data.tracks.items.length === 0) {
-            await session.abortTransaction();
-            session.endSession();
-            return successRes(res, 404, false, "Track Not Found");
-        }
+//         if (searchResponse.data.tracks.items.length === 0) {
+//             await session.abortTransaction();
+//             session.endSession();
+//             return successRes(res, 404, false, "Track Not Found");
+//         }
 
-        const track = searchResponse.data.tracks.items[0];
-        const territory = track.available_markets
-            ? track.available_markets.join(", ")
-            : "Unknown";
+//         const track = searchResponse.data.tracks.items[0];
+//         const territory = track.available_markets
+//             ? track.available_markets.join(", ")
+//             : "Unknown";
 
-        const albumData = {
-            images: track.album.images.map((image) => image.url),
-            name: track.name,
-            releaseDate: track.album.release_date,
-            artists: track.artists.map((artist) => artist.name),
-            isrc: track.external_ids.isrc,
-            album: track.album.name,
-            genre: track.album.genres ? track.album.genres.join(", ") : "Unknown",
-            duration: track.duration_ms,
-            spotifyUrl: track.external_urls.spotify,
-            territory: territory,
-        };
+//         const albumData = {
+//             images: track.album.images.map((image) => image.url),
+//             name: track.name,
+//             releaseDate: track.album.release_date,
+//             artists: track.artists.map((artist) => artist.name),
+//             isrc: track.external_ids.isrc,
+//             album: track.album.name,
+//             genre: track.album.genres ? track.album.genres.join(", ") : "Unknown",
+//             duration: track.duration_ms,
+//             spotifyUrl: track.external_urls.spotify,
+//             territory: territory,
+//         };
 
-        if (status.includes('hotAlbum')) {
-            const newHotAlbum = new hotAlbmubModel(albumData);
-            let saveHotAlbum = await newHotAlbum.save({ session });
-            if (!saveHotAlbum) {
-                await session.abortTransaction();
-                session.endSession();
-                return swrRes(res);
-            }
-        }
+//         if (status.includes('hotAlbum')) {
+//             const newHotAlbum = new hotAlbmubModel(albumData);
+//             let saveHotAlbum = await newHotAlbum.save({ session });
+//             if (!saveHotAlbum) {
+//                 await session.abortTransaction();
+//                 session.endSession();
+//                 return swrRes(res);
+//             }
+//         }
 
-        if (status.includes('topChart')) {
-            const newTopChart = new topChartModel(albumData);
-            let saveTopChart = await newTopChart.save({ session });
-            if (!saveTopChart) {
-                await session.abortTransaction();
-                session.endSession();
-                return swrRes(res);
-            }
-        }
+//         if (status.includes('topChart')) {
+//             const newTopChart = new topChartModel(albumData);
+//             let saveTopChart = await newTopChart.save({ session });
+//             if (!saveTopChart) {
+//                 await session.abortTransaction();
+//                 session.endSession();
+//                 return swrRes(res);
+//             }
+//         }
 
-        await session.commitTransaction();
-        session.endSession();
-        return successRes(
-            res,
-            201,
-            true,
-            "Song added successfully",
-            albumData
-        );
-    } catch (error) {
-        await session.abortTransaction();
-        session.endSession();
-        return catchRes(res, error);
-    }
-};
+//         await session.commitTransaction();
+//         session.endSession();
+//         return successRes(
+//             res,
+//             201,
+//             true,
+//             "Song added successfully",
+//             albumData
+//         );
+//     } catch (error) {
+//         await session.abortTransaction();
+//         session.endSession();
+//         return catchRes(res, error);
+//     }
+// };
 
 // module.exports.addHotSong = async (req, res) => {
 //     let { _id } = req.user;
@@ -218,6 +218,84 @@ module.exports.addHotSong = async (req, res) => {
 //         return catchRes(res, error);
 //     }
 // };
+
+module.exports.addHotSong = async (req, res) => {
+    let { _id } = req.user;
+
+    const session = await mongoose.startSession();
+    session.startTransaction();
+
+    try {
+        const { isrcKey, status } = req.body;
+
+        const findAdmin = await Admin.findById(_id).session(session);
+        if (!findAdmin) {
+            await session.abortTransaction();
+            session.endSession();
+            return successRes(res, 401, false, "Admin Not Found");
+        }
+
+        const territory = "IN";
+        const apiKey = process.env.LF_API_KEY || "5f99ebb429f9d2b9e13998f93943b34a";
+        const url = `https://api.lyricfind.com/lyric.do?apikey=${apiKey}&territory=${territory}&reqtype=default&trackid=isrc:${isrcKey}&output=json`;
+
+        if (isrcKey == 'not-available') {
+            return successRes(res, 404, false, "Lyrics Not Found", null);
+        }
+
+        const response = await axios.get(url);
+        const { track, response: apiResponse } = response.data;
+
+        if (apiResponse.code !== 101) {
+            await session.abortTransaction();
+            session.endSession();
+            return successRes(res, 400, false, "Failed to fetch lyrics");
+        }
+
+        // Prepare albumData based on the track data received
+        const albumData = {
+            lfid: track.lfid,
+            title: track.title,
+            artists: track.artist.name.split(', ').map(name => name.trim()),
+            duration: parseDuration(track.duration),
+            isrcs: track.isrcs[0],
+            has_lrc: track.has_lrc,
+            copyright: track.copyright,
+            writer: track.writer,
+        };
+
+        // Determine which model to save based on status
+        let saveResult;
+        if (status.includes('hotAlbum')) {
+            const newHotAlbum = new hotAlbmubModel(albumData);
+            saveResult = await newHotAlbum.save({ session });
+        }
+        if (status.includes('topChart')) {
+            // Adjust to use topChartModel if needed
+            const newTopChart = new topChartModel(albumData);
+            saveResult = await newTopChart.save({ session });
+        }
+
+        if (!saveResult) {
+            await session.abortTransaction();
+            session.endSession();
+            return swrRes(res);
+        }
+
+        await session.commitTransaction();
+        session.endSession();
+        return successRes(res, 201, true, "Song added successfully", albumData);
+    } catch (error) {
+        await session.abortTransaction();
+        session.endSession();
+        return catchRes(res, error);
+    }
+};
+
+function parseDuration(durationStr) {
+    const [minutes, seconds] = durationStr.split(':').map(Number);
+    return minutes + seconds / 60;
+}
 
 module.exports.getHotSongList = async (req, res) => {
     try {
@@ -520,7 +598,8 @@ module.exports.getAlbumSong = async (req, res) => {
 
 //for user and admin both
 module.exports.searchLyricsFindSongs = async (req, res) => {
-    const { type, query } = req.body;
+    const { type = 'track', query } = req.body;
+    console.log(query, "query")
 
     const validTypes = ["artist", "track", "album"];
     if (!validTypes.includes(type)) {
@@ -553,8 +632,6 @@ module.exports.searchLyricsFindSongs = async (req, res) => {
                     });
                 }
                 return successRes(res, 200, true, "Search Results", result);
-
-                return res.status(200).json({ success: true, data: result });
             }
         );
     } catch (error) {
