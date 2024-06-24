@@ -39,10 +39,14 @@ module.exports.topChartDetails = async (req, res) => {
 module.exports.deleteTopChart = async (req, res) => {
     try {
         const chartId = req.query.chartId
+        console.log(chartId, "111111111")
         if (!chartId || chartId == undefined || chartId == null || chartId == '') {
             return successRes(res, 400, false, "Please Provide Chart Id")
         }
-        const deletTopChart = await topChartModel.findByIdAndDelete(chartId)
+        const deletTopChart = await topChartModel.deleteOne(
+            { _id: chartId }
+        )
+        console.log(deletTopChart)
         if (!deletTopChart) {
             return catchRes(res, { message: "Something went wrong" })
         }

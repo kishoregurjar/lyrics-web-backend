@@ -251,27 +251,22 @@ module.exports.addHotSong = async (req, res) => {
             session.endSession();
             return successRes(res, 400, false, "Failed to fetch lyrics");
         }
-
-        // Prepare albumData based on the track data received
         const albumData = {
             lfid: track.lfid,
             title: track.title,
-            artists: track.artist.name.split(', ').map(name => name.trim()),
+            artists: track.artist.name,
             duration: parseDuration(track.duration),
             isrcs: track.isrcs[0],
             has_lrc: track.has_lrc,
             copyright: track.copyright,
             writer: track.writer,
         };
-        console.log(albumData, "111111111111")
-        // Determine which model to save based on status
         let saveResult;
         if (status.includes('hotAlbum')) {
             const newHotAlbum = new hotAlbmubModel(albumData);
             saveResult = await newHotAlbum.save({ session });
         }
         if (status.includes('topChart')) {
-            // Adjust to use topChartModel if needed
             const newTopChart = new topChartModel(albumData);
             saveResult = await newTopChart.save({ session });
         }
@@ -286,6 +281,7 @@ module.exports.addHotSong = async (req, res) => {
         session.endSession();
         return successRes(res, 201, true, "Song added successfully", albumData);
     } catch (error) {
+        console.log(error, "error")
         await session.abortTransaction();
         session.endSession();
         return catchRes(res, error);
