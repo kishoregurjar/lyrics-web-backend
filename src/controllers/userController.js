@@ -8,6 +8,7 @@ const jwt = require("jsonwebtoken");
 const Feedback = require("../models/reviewsModel");
 const Testimonial = require("../models/testimonialModel");
 const { USER_AVATAR } = require("../utils/constants");
+const hotAlbmubModel = require("../models/hotAlbmubModel");
 
 module.exports.createUser = async (req, res, next) => {
   let { firstName, lastName, email, password, mobile, avatar } = req.body;
@@ -344,6 +345,24 @@ module.exports.getTestimonial = async (req, res) => {
       return successRes(res, 200, false, "Empty Testimonial List", []);
     }
     return successRes(res, 200, true, "Testimonial List", testimonialData);
+  } catch (error) {
+    return catchRes(res, error);
+  }
+};
+
+module.exports.getHotSongList = async (req, res) => {
+  try {
+    let { _id } = req.user;
+    const findUser = await User.findById(_id);
+    if (!findUser) {
+      return successRes(res, 401, false, "User Not Found");
+    }
+
+    const findHotSongs = await hotAlbmubModel.find().sort({ createdAt: -1 });
+    if (!findHotSongs) {
+      return successRes(res, 200, false, "Empty Hot Song List", []);
+    }
+    return successRes(res, 200, true, "Hot Song List", findHotSongs);
   } catch (error) {
     return catchRes(res, error);
   }
