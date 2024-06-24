@@ -36,4 +36,8 @@ router.post('/get-lyrics-user', controller.lyricsController.getLyricsUser)
 router.get('/album/songs', controller.lyricsController.getAlbumSong)
 router.post('/search-lyricfind', controller.lyricsController.searchLyricsFindSongs)
 
+//Hot Album List
+
+router.get('/user-hot-album', verifyUserToken, controller.userController.getHotSongList)
+
 module.exports = router
