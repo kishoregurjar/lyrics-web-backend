@@ -586,9 +586,56 @@ module.exports.getAlbumSong = async (req, res) => {
 // =====================================Lyrics Find Apis=======================================================
 
 //for user and admin both
+// module.exports.searchLyricsFindSongs = async (req, res) => {
+//     const { type = 'track', query } = req.body;
+//     console.log(query, "query")
+
+//     const validTypes = ["artist", "track", "album"];
+//     if (!validTypes.includes(type)) {
+//         return res
+//             .status(400)
+//             .json({ success: false, message: "Invalid search type" });
+//     }
+
+//     let apiUrl = "";
+//     if (type === "track") {
+//         apiUrl = `https://api.lyricfind.com/search.do?apikey=9d2330933c7ca5d0c36aa228f372d87b&territory=IN&reqtype=default&searchtype=track&lyrics=${query}`;
+//     } else if (type === "artist") {
+//         apiUrl = `https://api.lyricfind.com/search.do?reqtype=default&apikey=9d2330933c7ca5d0c36aa228f372d87b&territory=IN&searchtype=track&artist=${query}`;
+//     } else if (type === "album") {
+//         apiUrl = `https://api.lyricfind.com/search.do?reqtype=default&apikey=9d2330933c7ca5d0c36aa228f372d87b&territory=IN&searchtype=track&album=${query}`;
+//     }
+
+//     try {
+//         const searchResponse = await axios.get(apiUrl);
+
+//         xml2js.parseString(
+//             searchResponse.data,
+//             { explicitArray: false },
+//             (err, result) => {
+//                 if (err) {
+//                     console.error("Error parsing XML:", err);
+//                     return res.status(500).json({
+//                         success: false,
+//                         message: "Error parsing response from API",
+//                     });
+//                 }
+//                 return successRes(res, 200, true, "Search Results", result);
+//             }
+//         );
+//     } catch (error) {
+//         console.error("Error searching LyricFind API:", error);
+//         return res
+//             .status(500)
+//             .json({ success: false, message: "Internal Server Error" });
+//     }
+// };
+
+//with pagijnation
+
 module.exports.searchLyricsFindSongs = async (req, res) => {
-    const { type = 'track', query } = req.body;
-    console.log(query, "query")
+    const { type = 'track', query, page = 1, limit = 10 } = req.body;
+    console.log(query, "query");
 
     const validTypes = ["artist", "track", "album"];
     if (!validTypes.includes(type)) {
@@ -596,14 +643,15 @@ module.exports.searchLyricsFindSongs = async (req, res) => {
             .status(400)
             .json({ success: false, message: "Invalid search type" });
     }
-
+    const offset = page * limit - limit
+    console.log(offset, "offset")
     let apiUrl = "";
     if (type === "track") {
-        apiUrl = `https://api.lyricfind.com/search.do?apikey=9d2330933c7ca5d0c36aa228f372d87b&territory=IN&reqtype=default&searchtype=track&lyrics=${query}`;
+        apiUrl = `https://api.lyricfind.com/search.do?apikey=9d2330933c7ca5d0c36aa228f372d87b&territory=IN&reqtype=default&searchtype=track&lyrics=${query}&page=${page}&limit=${limit}&offset=${offset}`;
     } else if (type === "artist") {
-        apiUrl = `https://api.lyricfind.com/search.do?reqtype=default&apikey=9d2330933c7ca5d0c36aa228f372d87b&territory=IN&searchtype=track&artist=${query}`;
+        apiUrl = `https://api.lyricfind.com/search.do?reqtype=default&apikey=9d2330933c7ca5d0c36aa228f372d87b&territory=IN&searchtype=track&artist=${query}&page=${page}&limit=${limit}&offset=${offset}`;
     } else if (type === "album") {
-        apiUrl = `https://api.lyricfind.com/search.do?reqtype=default&apikey=9d2330933c7ca5d0c36aa228f372d87b&territory=IN&searchtype=track&album=${query}`;
+        apiUrl = `https://api.lyricfind.com/search.do?reqtype=default&apikey=9d2330933c7ca5d0c36aa228f372d87b&territory=IN&searchtype=track&album=${query}&page=${page}&limit=${limit}&offset=${offset}`;
     }
 
     try {
@@ -620,7 +668,25 @@ module.exports.searchLyricsFindSongs = async (req, res) => {
                         message: "Error parsing response from API",
                     });
                 }
-                return successRes(res, 200, true, "Search Results", result);
+
+                const totalResults = parseInt(result.lyricfind.tracks.$.totalresults, 10);
+                const totalPages = Math.ceil(totalResults / limit);
+                const currentPage = parseInt(page, 10);
+
+                const pagination = {
+                    totalResults,
+                    totalPages,
+                    currentPage,
+                    limit,
+                };
+
+                return res.status(200).json({
+                    success: true,
+                    status: 200,
+                    message: "Search Results",
+                    pagination,
+                    data: result
+                });
             }
         );
     } catch (error) {
@@ -629,4 +695,4 @@ module.exports.searchLyricsFindSongs = async (req, res) => {
             .status(500)
             .json({ success: false, message: "Internal Server Error" });
     }
-};
+}
