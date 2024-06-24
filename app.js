@@ -22,6 +22,7 @@ let PORT = process.env.APP_PORT || 3007;
 app.use(compression());
 
 app.use(express.static("uploads"));
+app.use(express.static("src/uploads"));
 app.use(helmet());
 app.use(cors());
 app.use(express.json());
