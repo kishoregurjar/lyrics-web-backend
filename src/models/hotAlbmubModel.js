@@ -24,7 +24,7 @@ const hotAlbumSchema = new mongoose.Schema({
     title: { type: String, required: true },
     artists: [{ type: String, required: true }],
     duration: { type: Number },
-    isrc: { type: String },
+    isrcs: { type: String },
     has_lrc: { type: Boolean },
     copyright: { type: String },
     writer: { type: String },
@@ -32,3 +32,4 @@ const hotAlbumSchema = new mongoose.Schema({
 });
 
 module.exports = mongoose.model('HotAlbum', hotAlbumSchema);
+

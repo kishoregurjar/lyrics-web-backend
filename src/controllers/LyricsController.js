@@ -263,7 +263,7 @@ module.exports.addHotSong = async (req, res) => {
             copyright: track.copyright,
             writer: track.writer,
         };
-
+        console.log(albumData, "111111111111")
         // Determine which model to save based on status
         let saveResult;
         if (status.includes('hotAlbum')) {
@@ -306,7 +306,7 @@ module.exports.getHotSongList = async (req, res) => {
         }
 
         const findHotSongs = await hotAlbmubModel.find().sort({ createdAt: -1 });
-
+        console.log(findHotSongs, "1111111111")
         if (!findHotSongs) {
             return successRes(res, 200, false, "Empty Hot Song List", []);
         }
