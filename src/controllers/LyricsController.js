@@ -255,7 +255,7 @@ module.exports.addHotSong = async (req, res) => {
             lfid: track.lfid,
             title: track.title,
             artists: track.artist.name,
-            duration: parseDuration(track.duration),
+            duration: (track.duration),
             isrcs: track.isrcs[0],
             has_lrc: track.has_lrc,
             copyright: track.copyright,
@@ -281,17 +281,11 @@ module.exports.addHotSong = async (req, res) => {
         session.endSession();
         return successRes(res, 201, true, "Song added successfully", albumData);
     } catch (error) {
-        console.log(error, "error")
         await session.abortTransaction();
         session.endSession();
         return catchRes(res, error);
     }
 };
-
-function parseDuration(durationStr) {
-    const [minutes, seconds] = durationStr.split(':').map(Number);
-    return minutes + seconds / 60;
-}
 
 module.exports.getHotSongList = async (req, res) => {
     try {
@@ -302,7 +296,6 @@ module.exports.getHotSongList = async (req, res) => {
         }
 
         const findHotSongs = await hotAlbmubModel.find().sort({ createdAt: -1 });
-        console.log(findHotSongs, "1111111111")
         if (!findHotSongs) {
             return successRes(res, 200, false, "Empty Hot Song List", []);
         }

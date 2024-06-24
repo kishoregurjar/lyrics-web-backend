@@ -38,8 +38,7 @@ module.exports.topChartDetails = async (req, res) => {
 //delete top Chart for admin
 module.exports.deleteTopChart = async (req, res) => {
     try {
-        const chartId = req.query.chartId
-        console.log(chartId, "111111111")
+        const chartId = req.query.chartId;
         if (!chartId || chartId == undefined || chartId == null || chartId == '') {
             return successRes(res, 400, false, "Please Provide Chart Id")
         }
