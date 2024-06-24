@@ -179,4 +179,10 @@ router.get("/get-top-lyrics", controller.adminController.getTopLyrics);
 
 router.get("/get-search-lyrics", controller.adminController.getSearchLyrics);
 
+/* Top Chart Routes*/
+router.get('/top-chart-list', controller.topChartController.getTopChartList)
+router.get('/top-chart-details', controller.topChartController.topChartDetails)
+router.delete('/delete-top-chart', verifyAdminToken, controller.topChartController.deleteTopChart)
+
+
 module.exports = router;
