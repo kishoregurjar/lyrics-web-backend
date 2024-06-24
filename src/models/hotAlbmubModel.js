@@ -23,7 +23,7 @@ const hotAlbumSchema = new mongoose.Schema({
     lfid: { type: String, required: true },
     title: { type: String, required: true },
     artists: [{ type: String, required: true }],
-    duration: { type: Number },
+    duration: { type: String },
     isrcs: { type: String },
     has_lrc: { type: Boolean },
     copyright: { type: String },
