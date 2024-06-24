@@ -255,7 +255,7 @@ module.exports.addHotSong = async (req, res) => {
             lfid: track.lfid,
             title: track.title,
             artists: track.artist.name,
-            duration: track.duration,
+            duration: parseDuration(track.duration),
             isrcs: track.isrcs[0],
             has_lrc: track.has_lrc,
             copyright: track.copyright,
