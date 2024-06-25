@@ -352,11 +352,11 @@ module.exports.getTestimonial = async (req, res) => {
 
 module.exports.getHotSongList = async (req, res) => {
   try {
-    let { _id } = req.user;
-    const findUser = await User.findById(_id);
-    if (!findUser) {
-      return successRes(res, 401, false, "User Not Found");
-    }
+    // let { _id } = req.user;
+    // const findUser = await User.findById(_id);
+    // if (!findUser) {
+    //   return successRes(res, 401, false, "User Not Found");
+    // }
 
     const findHotSongs = await hotAlbmubModel.find().sort({ createdAt: -1 });
     if (!findHotSongs) {
