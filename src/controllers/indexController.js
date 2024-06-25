@@ -2,12 +2,14 @@ const userController = require('./userController')
 const adminController = require('./adminController')
 const lyricsController = require('./LyricsController')
 const topChartController = require('./topChartController')
+const artistController = require('./artistController')
 
 const controller = {
     userController,
     adminController,
     lyricsController,
-    topChartController
+    topChartController,
+    artistController
 }
 
 module.exports = controller
