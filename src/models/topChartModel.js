@@ -5,7 +5,7 @@ const topChartSchema = new mongoose.Schema({
     title: { type: String, required: true },
     artists: [{ type: String, required: true }],
     duration: { type: String },
-    isrc: { type: String },
+    isrcs: { type: String },
     has_lrc: { type: Boolean },
     copyright: { type: String },
     writer: { type: String },
