@@ -71,9 +71,8 @@ const uploadSingleFile = (fieldName, options) => {
       if (err) {
         if (err instanceof multer.MulterError) {
           if (err.code === "LIMIT_FILE_SIZE") {
-            const message = `File too large. Maximum size is ${
-              options.fileSize / 1000000
-            }MB.`;
+            const message = `File too large. Maximum size is ${options.fileSize / 1000000
+              }MB.`;
             return successRes(res, 400, false, message);
           }
           return successRes(res, 400, false, err.message);
@@ -91,12 +90,11 @@ const uploadMultipleFiles = (fieldName, maxCount, options) => {
   const upload = createMulter(options).array(fieldName, maxCount);
   return (req, res, next) => {
     upload(req, res, (err) => {
-        if (err) {
+      if (err) {
         if (err instanceof multer.MulterError) {
           if (err.code === "LIMIT_FILE_SIZE") {
-            const message = `File too large. Maximum size is ${
-              options.fileSize / 1000000
-            }MB.`;
+            const message = `File too large. Maximum size is ${options.fileSize / 1000000
+              }MB.`;
             return successRes(res, 400, false, message);
           }
           if (err.code === "LIMIT_UNEXPECTED_FILE") {
@@ -117,29 +115,29 @@ const uploadMultipleFiles = (fieldName, maxCount, options) => {
 module.exports.uploadAdminAvatar = uploadSingleFile("image", {
   fileTypes: /jpeg|jpg|png/,
   fileSize: 3000000,
-  folder: "uploads/admin_profile_pictures",
+  folder: "src/uploads/admin_profile_pictures",
 });
 
 module.exports.uploadTestimonialAvatar = uploadSingleFile("image", {
   fileTypes: /jpeg|jpg|png/,
-  folder: "uploads/testimonial_pictures",
+  folder: "src/uploads/testimonial_pictures",
 });
 
 module.exports.uploadNewsAvatar = uploadSingleFile("image", {
   fileTypes: /jpeg|jpg|png/,
-  folder: "uploads/news_pictures",
+  folder: "src/uploads/news_pictures",
 });
 
 module.exports.uploadCarouselImages = uploadMultipleFiles("images", 5, {
   fileTypes: /jpeg|jpg|png/,
   fileSize: 3000000,
-  folder: "uploads/carousel_pictures",
+  folder: "src/uploads/carousel_pictures",
 });
 
 /* User Section */
 module.exports.uploadUserAvatar = uploadSingleFile("image", {
   fileTypes: /jpeg|jpg|png/,
-  folder: "uploads/user_profile_pictures",
+  folder: "src/uploads/user_profile_pictures",
 });
 
 module.exports.uploadSingleFile = uploadSingleFile;
