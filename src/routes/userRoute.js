@@ -40,4 +40,9 @@ router.post('/search-lyricfind', controller.lyricsController.searchLyricsFindSon
 
 router.get('/user-hot-album', controller.userController.getHotSongList)
 
+//artist list amd albums
+
+router.get('/artist-list', controller.artistController.getAllArtistName)
+router.get('/artist-albums', controller.artistController.getArtistAlbums)
+
 module.exports = router
