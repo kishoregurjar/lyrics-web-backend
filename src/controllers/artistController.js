@@ -77,7 +77,6 @@ module.exports.getArtistAlbums = async (req, res) => {
             .limit(limit)
             .select('-_id -song_link');
 
-        // Using Set to filter out duplicate album names
         const uniqueAlbumsSet = new Set();
         const uniqueAlbums = [];
 
@@ -102,98 +101,6 @@ module.exports.getArtistAlbums = async (req, res) => {
         return res.status(500).json({ error: 'Internal server error' });
     }
 };
-
-
-// module.exports.getArtistAlbums = async (req, res) => {
-//     try {
-//         const { artist_id, page = 1 } = req.query;
-//         const limit = 10;
-//         const skip = (page - 1) * limit;
-//         const artistWithAlbums = await ArtistDetails.aggregate([
-//             { $match: { id: Number(artist_id) } },
-//             {
-//                 $lookup: {
-//                     from: 'artistalbumsandsongs',
-//                     let: { artist_id: '$id' },
-//                     pipeline: [
-//                         {
-//                             $match: {
-//                                 $expr: { $eq: ['$artist_id', '$$artist_id'] }
-//                             }
-//                         },
-//                         {
-//                             $project: {
-//                                 _id: 0,
-//                                 song_link: 0
-//                             }
-//                         }
-//                     ],
-//                     as: 'albums'
-//                 }
-//             }
-//         ]);
-//         if (artistWithAlbums.length === 0) {
-//             return successRes(res, 404, false, "Artist Not Found", []);
-//         }
-//         const [artist] = artistWithAlbums;
-//         const { _id, artist_link, albums, ...artistDetails } = artist;
-
-//         const totalAlbumsQuery = await ArtistAlbums.countDocuments({ artist_id: Number(artist_id) });
-
-//         const totalPages = Math.ceil(totalAlbumsQuery / limit);
-
-//         const paginatedAlbums = await ArtistAlbums.find({ artist_id: Number(artist_id) })
-//             .skip(skip)
-//             .limit(limit)
-//             .select('-_id -song_link');
-
-//         return successRes(res, 200, true, "Data Fetched successfully", {
-//             ...artistDetails,
-//             albums: paginatedAlbums,
-//             currentPage: page,
-//             totalPages
-//         });
-//     } catch (error) {
-//         console.error('Error fetching artist albums:', error);
-//         return res.status(500).json({ error: 'Internal server error' });
-//     }
-// };
-
-module.exports.getSongsOfAlbums = async (req, res) => {
-    try {
-        const { album_name, page = 1, limit = 10 } = req.query;
-
-        // Calculate the number of documents to skip
-        const skip = (page - 1) * limit;
-
-        // Query to count total documents matching the album_name
-        const totalDocuments = await ArtistAlbums.countDocuments({ album_name });
-
-        // Calculate total pages
-        const totalPages = Math.ceil(totalDocuments / limit);
-
-        // Query to get the paginated songs of the specified album_name
-        const songs = await ArtistAlbums.find({ album_name })
-            .skip(skip)
-            .limit(limit)
-            .select('-_id -artist_id -album_name');
-
-        return res.status(200).json({
-            success: true,
-            status: 200,
-            message: "Data Fetched successfully",
-            data: {
-                songs,
-                currentPage: page,
-                totalPages
-            }
-        });
-    } catch (error) {
-        console.error('Error fetching songs of album:', error);
-        return res.status(500).json({ error: 'Internal server error' });
-    }
-};
-
 
 module.exports.getArtiSongs = async (req, res) => {
     try {
@@ -223,7 +130,55 @@ module.exports.getArtiSongs = async (req, res) => {
     }
 }
 
+module.exports.getSongsOfAlbums = async (req, res) => {
+    try {
+        const { album_name, page = 1, limit = 10 } = req.query;
+        const skip = (page - 1) * limit;
 
+        const totalDocuments = await ArtistAlbums.countDocuments({ album_name });
+        const totalPages = Math.ceil(totalDocuments / limit);
+
+        const songs = await ArtistAlbums.aggregate([
+            { $match: { album_name } },
+            { $skip: skip },
+            { $limit: limit },
+            {
+                $lookup: {
+                    from: 'allartistdetails', // collection name in the database
+                    localField: 'artist_id',
+                    foreignField: 'id',
+                    as: 'artistDetails'
+                }
+            },
+            { $unwind: '$artistDetails' }, // Assuming each song has one artist
+            {
+                $project: {
+                    _id: 1,
+                    id: 1,
+                    artist_id: 1,
+                    album_name: 1,
+                    song_name: 1,
+                    song_link: 1,
+                    'artistDetails.artist_name': 1
+                }
+            }
+        ]);
+
+        return res.status(200).json({
+            success: true,
+            status: 200,
+            message: "Data Fetched successfully",
+            data: {
+                songs,
+                currentPage: page,
+                totalPages
+            }
+        });
+    } catch (error) {
+        console.error('Error fetching songs of album:', error);
+        return res.status(500).json({ error: 'Internal server error' });
+    }
+};
 
 
 
