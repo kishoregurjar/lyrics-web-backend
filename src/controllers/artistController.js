@@ -1,3 +1,4 @@
+const { default: axios } = require("axios");
 const ArtistAlbums = require("../models/allAlbumsAndSongSchema");
 const ArtistDetails = require("../models/artistDetails");
 const ArtistSongs = require("../models/artistSongs");
@@ -26,6 +27,7 @@ module.exports.getAllArtistName = async (req, res) => {
 
         return successRes(res, 200, true, "All Artist Data", {
             artists,
+            totalCount,
             currentPage: page,
             totalPages
         });
@@ -39,6 +41,7 @@ module.exports.getArtistAlbums = async (req, res) => {
         const { artist_id, page = 1 } = req.query;
         const limit = 50;
         const skip = (page - 1) * limit;
+
         const artistWithAlbums = await ArtistDetails.aggregate([
             { $match: { id: Number(artist_id) } },
             {
@@ -62,16 +65,17 @@ module.exports.getArtistAlbums = async (req, res) => {
                 }
             }
         ]);
+
         if (artistWithAlbums.length === 0) {
             return successRes(res, 404, false, "Artist Not Found", []);
         }
+
         const [artist] = artistWithAlbums;
         const { _id, artist_link, albums, ...artistDetails } = artist;
 
         const totalAlbumsQuery = await ArtistAlbums.countDocuments({ artist_id: Number(artist_id) });
-
         const totalPages = Math.ceil(totalAlbumsQuery / limit);
-
+        const totalAlbums = totalPages * limit
         const paginatedAlbums = await ArtistAlbums.find({ artist_id: Number(artist_id) })
             .skip(skip)
             .limit(limit)
@@ -81,11 +85,12 @@ module.exports.getArtistAlbums = async (req, res) => {
         const uniqueAlbums = [];
 
         paginatedAlbums.forEach(album => {
-            if (!uniqueAlbumsSet.has(album.album_name)) {
-                uniqueAlbumsSet.add(album.album_name);
+            const cleanedAlbumName = album.album_name.replace(/["/]/g, '');
+            if (!uniqueAlbumsSet.has(cleanedAlbumName)) {
+                uniqueAlbumsSet.add(cleanedAlbumName);
                 uniqueAlbums.push({
                     artist_id: album.artist_id,
-                    album_name: album.album_name
+                    album_name: cleanedAlbumName
                 });
             }
         });
@@ -94,7 +99,9 @@ module.exports.getArtistAlbums = async (req, res) => {
             ...artistDetails,
             albums: uniqueAlbums,
             currentPage: page,
-            totalPages
+            totalPages,
+            totalAlbums
+
         });
     } catch (error) {
         console.error('Error fetching artist albums:', error);
@@ -104,7 +111,7 @@ module.exports.getArtistAlbums = async (req, res) => {
 
 module.exports.getArtiSongs = async (req, res) => {
     try {
-        const { song_name, artist_name, page = 1, pageSize = 10 } = req.query;
+        const { song_name, page = 1, pageSize = 10 } = req.query;
 
         const pageNumber = parseInt(page);
         const pageSizeNumber = parseInt(pageSize);
@@ -179,6 +186,8 @@ module.exports.getSongsOfAlbums = async (req, res) => {
         return res.status(500).json({ error: 'Internal server error' });
     }
 };
+
+
 
 
 
