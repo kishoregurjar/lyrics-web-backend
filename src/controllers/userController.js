@@ -395,7 +395,7 @@ module.exports.addUserComment = async (req, res) => {
   try {
     const user = await User.findById(userId);
     if (!user) {
-      return successRes(res, 404, false, "User Not Found");
+      return successRes(res, 401, false, "User Not Found");
     }
 
     const newComment = new UserComment({ comment, user: userId, isrc });
