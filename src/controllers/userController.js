@@ -1,15 +1,19 @@
-const { assignJwt } = require("../middlewares/authMiddleware");
-const User = require("../models/userModel");
-const { catchRes, successRes, SwrRes, swrRes } = require("../utils/response");
 const bcrypt = require("bcryptjs");
 const mongoose = require("mongoose");
-const { genericMail } = require("../utils/sendMail");
 const jwt = require("jsonwebtoken");
+
+const User = require("../models/userModel");
 const Feedback = require("../models/reviewsModel");
 const Testimonial = require("../models/testimonialModel");
-const { USER_AVATAR } = require("../utils/constants");
 const hotAlbmubModel = require("../models/hotAlbmubModel");
+const UserComment = require("../models/userCommentModel");
 
+const { assignJwt } = require("../middlewares/authMiddleware");
+const { catchRes, successRes, SwrRes, swrRes } = require("../utils/response");
+const { genericMail } = require("../utils/sendMail");
+const { USER_AVATAR } = require("../utils/constants");
+
+/* Auth Section */
 module.exports.createUser = async (req, res, next) => {
   let { firstName, lastName, email, password, mobile, avatar } = req.body;
   email = email.toLowerCase();
@@ -42,7 +46,7 @@ module.exports.createUser = async (req, res, next) => {
       email,
       password: hashedPassword,
       mobile,
-      avatar
+      avatar,
     });
 
     const user = await newUser.save({ session });
@@ -198,7 +202,13 @@ module.exports.editUserProfile = async (req, res) => {
     await session.commitTransaction();
     session.endSession();
 
-    return successRes(res, 200, true, "User profile updated successfully.", user);
+    return successRes(
+      res,
+      200,
+      true,
+      "User profile updated successfully.",
+      user
+    );
   } catch (error) {
     await session.abortTransaction();
     session.endSession();
@@ -305,6 +315,7 @@ module.exports.resetPassword = async (req, res) => {
   }
 };
 
+/* User Access */
 module.exports.submitFeedBack = async (req, res) => {
   const session = await mongoose.startSession();
   session.startTransaction();
@@ -364,6 +375,152 @@ module.exports.getHotSongList = async (req, res) => {
     }
     return successRes(res, 200, true, "Hot Song List", findHotSongs);
   } catch (error) {
+    return catchRes(res, error);
+  }
+};
+
+/* Comment */
+module.exports.addUserComment = async (req, res) => {
+  const { comment, isrc } = req.body;
+  const userId = req.user._id;
+
+  if (!comment || !isrc) {
+    return successRes(res, 400, false, "All Fields are Required.");
+  }
+
+  if (comment.length > 500) {
+    return successRes(res, 400, false, "Comment is Too Long.");
+  }
+
+  try {
+    const user = await User.findById(userId);
+    if (!user) {
+      return successRes(res, 404, false, "User Not Found");
+    }
+
+    const newComment = new UserComment({ comment, user: userId, isrc });
+    await newComment.save();
+
+    return successRes(res, 201, true, "Comment Added", newComment);
+  } catch (error) {
+    console.error("Error Adding Comment:", error);
+    return catchRes(res, error);
+  }
+};
+
+module.exports.getUserComments = async (req, res) => {
+  const { isrc } = req.query;
+
+  if (!isrc) {
+    return successRes(res, 400, false, "ISRC is Required.");
+  }
+
+  try {
+    const comments = await UserComment.find({ isrc, status: "enabled" })
+      .populate("user", "firstName lastName email mobile avatar")
+      .exec();
+
+    if (comments.length === 0) {
+      return successRes(
+        res,
+        404,
+        false,
+        "No Comments Found for the given ISRC."
+      );
+    }
+
+    return successRes(res, 200, true, "Users Comment List", comments);
+  } catch (error) {
+    console.error("Error Fetching Comments:", error);
+    return catchRes(res, error);
+  }
+};
+
+module.exports.updateUserCommentStatus = async (req, res) => {
+  const { commentId, status } = req.body;
+
+  if (!commentId || !status) {
+    return successRes(res, 400, false, "Comment ID and Status are required.");
+  }
+
+  const validStatuses = ["enabled", "disabled"];
+  if (!validStatuses.includes(status)) {
+    return successRes(res, 400, false, "Invalid Status Value.");
+  }
+
+  try {
+    const comment = await UserComment.findById(commentId);
+    if (!comment) {
+      return successRes(res, 404, false, "Comment Not Found.");
+    }
+
+    comment.status = status;
+    comment.updatedAt = Date.now();
+    comment.deletedAt = status === "disabled" ? Date.now() : null;
+
+    let savedComment = await comment.save();
+    // console.log(savedComment);
+    return successRes(res, 200, true, "Comment Status Updated.", savedComment);
+  } catch (error) {
+    console.error("Error Updating Comment Status:", error);
+    return catchRes(res, error);
+  }
+};
+
+module.exports.editUserComment = async (req, res) => {
+  const { commentId, comment } = req.body;
+
+  if (!commentId || !comment) {
+    return successRes(res, 400, false, "Comment ID and Comment are required.");
+  }
+
+  if (comment.length > 500) {
+    return successRes(res, 400, false, "Comment is too long.");
+  }
+
+  try {
+    const existingComment = await UserComment.findById(commentId);
+    if (!existingComment) {
+      return successRes(res, 404, false, "Comment Not Found.");
+    }
+
+    existingComment.comment = comment;
+    existingComment.updatedAt = Date.now();
+
+    let updatedComment = await existingComment.save();
+    return successRes(res, 200, true, "Comment updated.", updatedComment);
+  } catch (error) {
+    console.error("Error Editing Comment:", error);
+    return catchRes(res, error);
+  }
+};
+
+module.exports.deleteUserComment = async (req, res) => {
+  const { commentId } = req.query;
+  const userId = req.user._id;
+
+  if (!commentId) {
+    return successRes(res, 400, false, "Comment ID is required.");
+  }
+
+  try {
+    const comment = await UserComment.findOneAndDelete({
+      _id: commentId,
+      user: userId,
+    });
+
+    if (!comment) {
+      return successRes(
+        res,
+        404,
+        false,
+        "Comment Not Found or You are not authorized to delete this comment."
+      );
+    }
+
+    return successRes(res, 200, true, "Comment Deleted Successfully.", comment);
+  } catch (error) {
+    console.error("Error Deleting Comment:", error);
     return catchRes(res, error);
   }
 };

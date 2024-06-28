@@ -180,9 +180,28 @@ router.get("/get-top-lyrics", controller.adminController.getTopLyrics);
 router.get("/get-search-lyrics", controller.adminController.getSearchLyrics);
 
 /* Top Chart Routes*/
-router.get('/top-chart-list', controller.topChartController.getTopChartList)
-router.get('/top-chart-details', controller.topChartController.topChartDetails)
-router.delete('/delete-top-chart', verifyAdminToken, controller.topChartController.deleteTopChart)
+router.get("/top-chart-list", controller.topChartController.getTopChartList);
+router.get("/top-chart-details", controller.topChartController.topChartDetails);
+router.delete(
+  "/delete-top-chart",
+  verifyAdminToken,
+  controller.topChartController.deleteTopChart
+);
 
+/* Comment Routes */
+router.get(
+  "/get-user-comments-list",
+  controller.userController.getUserComments
+);
+router.put(
+  "/update-user-comment-status",
+  verifyAdminToken,
+  controller.userController.updateUserCommentStatus
+);
+router.delete(
+  "/delete-user-comment",
+  verifyAdminToken,
+  controller.adminController.deleteUserCommentByAdmin
+);
 
 module.exports = router;

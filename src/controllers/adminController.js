@@ -365,6 +365,26 @@ module.exports.uploadCarouselImages = async (req, res) => {
   }
 };
 
+module.exports.deleteUserCommentByAdmin = async (req, res) => {
+  const { commentId } = req.query;
+
+  if (!commentId) {
+    return successRes(res, 400, false, "Comment ID is required.");
+  }
+
+  try {
+    const comment = await UserComment.findByIdAndDelete(commentId);
+    if (!comment) {
+      return successRes(res, 404, false, "Comment Not Found.");
+    }
+
+    return successRes(res, 200, true, "Comment Deleted Successfully.", comment);
+  } catch (error) {
+    console.error("Error Deleting Comment:", error);
+    return catchRes(res, error);
+  }
+};
+
 /* Testimonial Section */
 module.exports.addTestimonial = async (req, res) => {
   const session = await mongoose.startSession();
@@ -711,7 +731,6 @@ module.exports.deleteNews = async (req, res) => {
     // Construct the full path to the image
     const fullPath = path.resolve(__dirname, "../../uploads", coverImgPath);
 
-
     // Delete news from the database
     await News.findByIdAndDelete(newsId, { session });
 
@@ -771,7 +790,6 @@ module.exports.getLyrics = async (req, res) => {
     const displayKey = process.env.LF_LRC_KEY;
 
     const url1 = `${apiType}?apikey=${apiKey}&${territory}&${reqType}&displaykey=${displayKey}&trackid=isrc:${trackId}&${output}`;
-
 
     const response = await axios.get(url1);
 
