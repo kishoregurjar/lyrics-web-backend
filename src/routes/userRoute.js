@@ -10,6 +10,7 @@ const {
   forgetPasswordSchema,
   userResetPasswordSchema,
   userFeedbackValidation,
+  userCommentValidation,
 } = require("../middlewares/userValidation");
 const { uploadUserAvatar } = require("../utils/multer");
 const router = express.Router();
@@ -95,6 +96,7 @@ router.get("/albums-songs", controller.artistController.getSongsOfAlbums);
 //comments
 router.post(
   "/add-comment",
+  validate(userCommentValidation),
   verifyUserToken,
   controller.userController.addUserComment
 );
