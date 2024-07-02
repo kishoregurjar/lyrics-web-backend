@@ -409,32 +409,40 @@ module.exports.addUserComment = async (req, res) => {
 };
 
 module.exports.getUserComments = async (req, res) => {
-  const { isrc } = req.query;
+  const { isrc, page = 1 } = req.query;
 
   if (!isrc) {
     return successRes(res, 400, false, "ISRC is Required.");
   }
 
-  try {
-    const comments = await UserComment.find({ isrc, status: "enabled" })
-      .populate("user", "firstName lastName email mobile avatar")
-      .exec();
+  const pageNumber = parseInt(page, 10);
+  const limitNumber = 10;  // Fixed limit of 10 comments per page
 
-    if (comments.length === 0) {
-      return successRes(
-        res,
-        404,
-        false,
-        "No Comments Found for the given ISRC."
-      );
+  try {
+    const totalComments = await UserComment.countDocuments({ isrc, status: "enabled" });
+
+    if (totalComments === 0) {
+      return successRes(res, 404, false, "No Comments Found for the given ISRC.");
     }
 
-    return successRes(res, 200, true, "Users Comment List", comments);
+    const comments = await UserComment.find({ isrc, status: "enabled" })
+      .populate("user", "firstName lastName email mobile avatar")
+      .skip((pageNumber - 1) * limitNumber)
+      .limit(limitNumber)
+      .exec();
+
+    return successRes(res, 200, true, "Users Comment List", {
+      comments,
+      totalComments,
+      totalPages: Math.ceil(totalComments / limitNumber),
+      currentPage: pageNumber,
+    });
   } catch (error) {
     console.error("Error Fetching Comments:", error);
     return catchRes(res, error);
   }
 };
+
 
 module.exports.updateUserCommentStatus = async (req, res) => {
   const { commentId, status } = req.body;

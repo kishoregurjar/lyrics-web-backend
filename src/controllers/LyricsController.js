@@ -669,7 +669,7 @@ module.exports.searchLyricsFindSongs = async (req, res) => {
                     });
                 }
 
-                const totalResults = parseInt(result.lyricfind.tracks.$.totalresults, 10);
+                const totalResults = parseInt(result?.lyricfind?.tracks?.$?.totalresults, 10);
                 const totalPages = Math.ceil(totalResults / limit);
                 const currentPage = parseInt(page, 10);
 
@@ -690,7 +690,7 @@ module.exports.searchLyricsFindSongs = async (req, res) => {
             }
         );
     } catch (error) {
-        console.error("Error searching LyricFind API:", error);
+        console.error("Error searching LyricFind API:", error.message);
         return res
             .status(500)
             .json({ success: false, message: "Internal Server Error" });
