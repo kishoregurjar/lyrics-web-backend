@@ -455,7 +455,7 @@ module.exports.getUserComments = async (req, res) => {
     const totalComments = await UserComment.countDocuments({ isrc, status: "enabled" });
 
     if (totalComments === 0) {
-      return successRes(res, 404, false, "No Comments Found for the given ISRC.");
+      return successRes(res, 404, false, "No Comments Found.");
     }
 
     const comments = await UserComment.find({ isrc, status: "enabled" })
