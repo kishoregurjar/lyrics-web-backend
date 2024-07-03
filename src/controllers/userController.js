@@ -13,6 +13,39 @@ const { catchRes, successRes, SwrRes, swrRes } = require("../utils/response");
 const { genericMail } = require("../utils/sendMail");
 const { USER_AVATAR } = require("../utils/constants");
 
+module.exports.isAuthorized = async (req, res) => {
+  try {
+    const { passKey } = req.body;
+    const originalPassKey = 'LYRICS528'
+    if (passKey !== originalPassKey) {
+      return successRes(res, 404, false, "Pass Key is invalid")
+    }
+    const payload = {
+      _id: "6684d95ce827f4eb6c31bdc2",
+      email: "testuser@yopmail.com",
+      role: "user",
+    }
+    const token = assignJwt(payload);
+
+    const userObj = {
+      "_id": "6684d95ce827f4eb6c31bdc2",
+      "email": "testuser@yopmail.com",
+      "firstName": "Test User",
+      "lastName": "Lyrics Web",
+      "mobile": "1234567890",
+      "isActive": true,
+      "isVerified": false,
+      "avatar": "http://localhost:3007/user_profile_pictures/1718797769994.jpeg",
+      "token": token
+    }
+
+    return successRes(res, 200, true, "Login successful", userObj);
+
+  } catch (error) {
+    return catchRes(res, error)
+  }
+}
+
 /* Auth Section */
 module.exports.createUser = async (req, res, next) => {
   let { firstName, lastName, email, password, mobile, avatar } = req.body;
