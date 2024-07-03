@@ -380,11 +380,13 @@ module.exports.getLyricsAdmin = async (req, res) => {
     try {
         const { isrcKey } = req.body;
         const territory = "IN";
-        const apiKey = process.env.LF_API_KEY || "5f99ebb429f9d2b9e13998f93943b34a"; // Use environment variable
-        const url = `https://api.lyricfind.com/lyric.do?apikey=${apiKey}&territory=${territory}&reqtype=default&trackid=isrc:${isrcKey}&output=json`;
+        const apiKey = process.env.LF_API_KEY || "b685be128f9c1d75da2ced009985c969";
+        const userAgent = req.headers['user-agent'] || 'YourAppName/1.0'; // Provide a default user agent if none is specified
 
-        if (isrcKey == 'not-available') {
-            return successRes(res, 404, false, "Lyrics Not Found", null)
+        const url = `https://api.lyricfind.com/lyric.do?apikey=${apiKey}&territory=${territory}&reqtype=default&trackid=isrc:${isrcKey}&output=json&useragent=${encodeURIComponent(userAgent)}`;
+
+        if (isrcKey === 'not-available') {
+            return successRes(res, 404, false, "Lyrics Not Found", null);
         }
 
         const response = await axios.get(url);
@@ -393,7 +395,7 @@ module.exports.getLyricsAdmin = async (req, res) => {
         let resObj = {};
 
         if (response?.data?.response?.code === 204) {
-            return successRes(res, 404, false, "Lyrics Not Found", null)
+            return successRes(res, 404, false, "Lyrics Not Found", null);
         } else if (response && response.data && response.data.track) {
             resObj = response.data.track;
             return successRes(res, 200, true, "Lyrics Fetched Successfully", resObj);

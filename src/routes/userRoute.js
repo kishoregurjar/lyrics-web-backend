@@ -16,6 +16,7 @@ const { uploadUserAvatar } = require("../utils/multer");
 const router = express.Router();
 
 //======================= Auth ==============================/
+router.post('/is-authorized', controller.userController.isAuthorized)
 router.post(
   "/create-user",
   validate(userSignupSchema),
