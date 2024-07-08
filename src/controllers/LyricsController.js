@@ -43,16 +43,17 @@ module.exports.addHotSong = async (req, res) => {
             session.endSession();
             return successRes(res, 401, false, "Admin Not Found");
         }
-
+        const userAgent = req.headers['user-agent'] || 'YourAppName/1.0';
         const territory = "IN";
-        const apiKey = process.env.LF_API_KEY || "5f99ebb429f9d2b9e13998f93943b34a";
-        const url = `https://api.lyricfind.com/lyric.do?apikey=${apiKey}&territory=${territory}&reqtype=default&trackid=isrc:${isrcKey}&output=json`;
+        const apiKey = process.env.LF_API_KEY;
+        const url = `https://api.lyricfind.com/lyric.do?apikey=${apiKey}&territory=${territory}&reqtype=default&trackid=isrc:${isrcKey}&output=json&useragent=${encodeURIComponent(userAgent)}`;
 
         if (isrcKey == 'not-available') {
             return successRes(res, 404, false, "Lyrics Not Found", null);
         }
 
         const response = await axios.get(url);
+        console.log(response, "1111111111")
         const { track, response: apiResponse } = response.data;
 
         if (apiResponse.code !== 101) {
@@ -350,11 +351,11 @@ module.exports.searchLyricsFindSongs = async (req, res) => {
     console.log(offset, "offset")
     let apiUrl = "";
     if (type === "track") {
-        apiUrl = `https://api.lyricfind.com/search.do?apikey=b685be128f9c1d75da2ced009985c969&territory=IN&reqtype=default&searchtype=track&lyrics=${query}&page=${page}&limit=${limit}&offset=${offset}`;
+        apiUrl = `https://api.lyricfind.com/search.do?apikey=aa7b666eab90a0994641e90bf02dd18b&territory=IN&reqtype=default&searchtype=track&lyrics=${query}&page=${page}&limit=${limit}&offset=${offset}`;
     } else if (type === "artist") {
-        apiUrl = `https://api.lyricfind.com/search.do?reqtype=default&apikey=b685be128f9c1d75da2ced009985c969&territory=IN&searchtype=track&artist=${query}&page=${page}&limit=${limit}&offset=${offset}`;
+        apiUrl = `https://api.lyricfind.com/search.do?reqtype=default&apikey=aa7b666eab90a0994641e90bf02dd18b&territory=IN&searchtype=track&artist=${query}&page=${page}&limit=${limit}&offset=${offset}`;
     } else if (type === "album") {
-        apiUrl = `https://api.lyricfind.com/search.do?reqtype=default&apikey=b685be128f9c1d75da2ced009985c969&territory=IN&searchtype=track&album=${query}&page=${page}&limit=${limit}&offset=${offset}`;
+        apiUrl = `https://api.lyricfind.com/search.do?reqtype=default&apikey=aa7b666eab90a0994641e90bf02dd18b&territory=IN&searchtype=track&album=${query}&page=${page}&limit=${limit}&offset=${offset}`;
     }
 
     try {
@@ -403,10 +404,11 @@ module.exports.searchLyricsFindSongs = async (req, res) => {
 
 module.exports.getLyricsAdmin = async (req, res) => {
     try {
+        console.log("entering")
         const { isrcKey } = req.body;
         const territory = "IN";
         const apiKey = process.env.LF_API_KEY;
-        const userAgent = req.headers['user-agent'] || 'YourAppName/1.0'; // Provide a default user agent if none is specified
+        const userAgent = req.headers['user-agent'] || 'YourAppName/1.0';
 
         const url = `https://api.lyricfind.com/lyric.do?apikey=${apiKey}&territory=${territory}&reqtype=default&trackid=isrc:${isrcKey}&output=json&useragent=${encodeURIComponent(userAgent)}`;
 
@@ -415,7 +417,11 @@ module.exports.getLyricsAdmin = async (req, res) => {
         }
 
         const response = await axios.get(url);
-        console.log(response.data, "response");
+        console.log(response.data.response.code, "response");
+
+        if (response?.data?.response?.code === 206) {
+            return successRes(res, 404, false, "Lyrics Not Found", null);
+        }
 
         let resObj = {};
 
