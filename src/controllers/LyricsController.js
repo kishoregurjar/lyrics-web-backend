@@ -6,6 +6,7 @@ const hotAlbmubModel = require("../models/hotAlbmubModel");
 const topChartModel = require('../models/topChartModel')
 const xml2js = require("xml2js");
 
+//access token for spotify
 async function getAccessToken() {
     const { SPOTIFY_CLIENT_ID, SPOTIFY_CLIENT_SECRET } = process.env;
     const token = Buffer.from(
@@ -26,199 +27,7 @@ async function getAccessToken() {
     return response.data.access_token;
 }
 
-// module.exports.addHotSong = async (req, res) => {
-//     let { _id } = req.user;
-
-//     const session = await mongoose.startSession();
-//     session.startTransaction();
-
-//     try {
-//         const { isrcKey, status } = req.body;
-
-//         const findAdmin = await Admin.findById(_id).session(session);
-//         if (!findAdmin) {
-//             await session.abortTransaction();
-//             session.endSession();
-//             return successRes(res, 401, false, "Admin Not Found");
-//         }
-
-//         if (status.includes('hotAlbum')) {
-//             const checkLimit = await hotAlbmubModel.find().count();
-//             if (checkLimit >= 8) {
-//                 await session.abortTransaction();
-//                 session.endSession();
-//                 return successRes(res, 400, false, "Can not add more than 8 Hot songs");
-//             }
-//         }
-
-//         const accessToken = await getAccessToken();
-//         if (!accessToken) {
-//             await session.abortTransaction();
-//             session.endSession();
-//             return swrRes(res);
-//         }
-
-//         const searchResponse = await axios.get(
-//             "https://api.spotify.com/v1/search",
-//             {
-//                 headers: {
-//                     Authorization: `Bearer ${accessToken}`,
-//                 },
-//                 params: {
-//                     q: `isrc:${isrcKey}`,
-//                     type: "track",
-//                     limit: 1,
-//                 },
-//             }
-//         );
-
-//         if (searchResponse.data.tracks.items.length === 0) {
-//             await session.abortTransaction();
-//             session.endSession();
-//             return successRes(res, 404, false, "Track Not Found");
-//         }
-
-//         const track = searchResponse.data.tracks.items[0];
-//         const territory = track.available_markets
-//             ? track.available_markets.join(", ")
-//             : "Unknown";
-
-//         const albumData = {
-//             images: track.album.images.map((image) => image.url),
-//             name: track.name,
-//             releaseDate: track.album.release_date,
-//             artists: track.artists.map((artist) => artist.name),
-//             isrc: track.external_ids.isrc,
-//             album: track.album.name,
-//             genre: track.album.genres ? track.album.genres.join(", ") : "Unknown",
-//             duration: track.duration_ms,
-//             spotifyUrl: track.external_urls.spotify,
-//             territory: territory,
-//         };
-
-//         if (status.includes('hotAlbum')) {
-//             const newHotAlbum = new hotAlbmubModel(albumData);
-//             let saveHotAlbum = await newHotAlbum.save({ session });
-//             if (!saveHotAlbum) {
-//                 await session.abortTransaction();
-//                 session.endSession();
-//                 return swrRes(res);
-//             }
-//         }
-
-//         if (status.includes('topChart')) {
-//             const newTopChart = new topChartModel(albumData);
-//             let saveTopChart = await newTopChart.save({ session });
-//             if (!saveTopChart) {
-//                 await session.abortTransaction();
-//                 session.endSession();
-//                 return swrRes(res);
-//             }
-//         }
-
-//         await session.commitTransaction();
-//         session.endSession();
-//         return successRes(
-//             res,
-//             201,
-//             true,
-//             "Song added successfully",
-//             albumData
-//         );
-//     } catch (error) {
-//         await session.abortTransaction();
-//         session.endSession();
-//         return catchRes(res, error);
-//     }
-// };
-
-// module.exports.addHotSong = async (req, res) => {
-//     let { _id } = req.user;
-
-//     const session = await mongoose.startSession();
-//     session.startTransaction();
-
-//     try {
-//         const { isrcKey } = req.body;
-
-//         const findAdmin = await Admin.findById(_id).session(session);
-//         if (!findAdmin) {
-//             await session.abortTransaction();
-//             session.endSession();
-//             return successRes(res, 401, false, "Admin Not Found");
-//         }
-
-//         const checkLimit = await hotAlbmubModel.find().count();
-//         if (checkLimit >= 8) {
-//             return successRes(res, 400, false, "Can not add more than 8 Hot songs");
-//         }
-
-//         const accessToken = await getAccessToken();
-//         if (!accessToken) {
-//             await session.abortTransaction();
-//             session.endSession();
-//             return swrRes(res);
-//         }
-
-//         const searchResponse = await axios.get(
-//             "https://api.spotify.com/v1/search",
-//             {
-//                 headers: {
-//                     Authorization: `Bearer ${accessToken}`,
-//                 },
-//                 params: {
-//                     q: `isrc:${isrcKey}`,
-//                     type: "track",
-//                     limit: 1,
-//                 },
-//             }
-//         );
-
-//         if (searchResponse.data.tracks.items.length === 0) {
-//             return successRes(res, 404, false, "Track Not Found");
-//         }
-
-//         const track = searchResponse.data.tracks.items[0];
-//         const territory = track.available_markets
-//             ? track.available_markets.join(", ")
-//             : "Unknown";
-
-//         const newHotAlbum = new hotAlbmubModel({
-//             images: track.album.images.map((image) => image.url),
-//             name: track.name,
-//             releaseDate: track.album.release_date,
-//             artists: track.artists.map((artist) => artist.name),
-//             isrc: track.external_ids.isrc,
-//             album: track.album.name,
-//             genre: track.album.genres ? track.album.genres.join(", ") : "Unknown",
-//             duration: track.duration_ms,
-//             spotifyUrl: track.external_urls.spotify,
-//             territory: territory, // Added territory field
-//         });
-
-//         let saveAlbum = await newHotAlbum.save();
-//         if (!saveAlbum) {
-//             await session.abortTransaction();
-//             session.endSession();
-//             return swrRes(res);
-//         }
-
-//         await session.commitTransaction();
-//         session.endSession();
-//         return successRes(
-//             res,
-//             201,
-//             true,
-//             "Hot song added successfully",
-//             newHotAlbum
-//         );
-//     } catch (error) {
-//         await session.abortTransaction();
-//         session.endSession();
-//         return catchRes(res, error);
-//     }
-// };
-
+//by admin
 module.exports.addHotSong = async (req, res) => {
     let { _id } = req.user;
 
@@ -234,16 +43,17 @@ module.exports.addHotSong = async (req, res) => {
             session.endSession();
             return successRes(res, 401, false, "Admin Not Found");
         }
-
+        const userAgent = req.headers['user-agent'] || 'YourAppName/1.0';
         const territory = "IN";
-        const apiKey = process.env.LF_API_KEY || "5f99ebb429f9d2b9e13998f93943b34a";
-        const url = `https://api.lyricfind.com/lyric.do?apikey=${apiKey}&territory=${territory}&reqtype=default&trackid=isrc:${isrcKey}&output=json`;
+        const apiKey = process.env.LF_API_KEY;
+        const url = `https://api.lyricfind.com/lyric.do?apikey=${apiKey}&territory=${territory}&reqtype=default&trackid=isrc:${isrcKey}&output=json&useragent=${encodeURIComponent(userAgent)}`;
 
         if (isrcKey == 'not-available') {
             return successRes(res, 404, false, "Lyrics Not Found", null);
         }
 
         const response = await axios.get(url);
+        console.log(response, "1111111111")
         const { track, response: apiResponse } = response.data;
 
         if (apiResponse.code !== 101) {
@@ -338,7 +148,7 @@ module.exports.deleteHotSong = async (req, res) => {
     }
 };
 
-//for admin panel
+//for admin panel from spotify
 module.exports.searchSong = async (req, res) => {
     try {
         const { query } = req.query;
@@ -376,38 +186,7 @@ module.exports.searchSong = async (req, res) => {
     }
 };
 
-module.exports.getLyricsAdmin = async (req, res) => {
-    try {
-        const { isrcKey } = req.body;
-        const territory = "IN";
-        const apiKey = process.env.LF_API_KEY || "b685be128f9c1d75da2ced009985c969";
-        const userAgent = req.headers['user-agent'] || 'YourAppName/1.0'; // Provide a default user agent if none is specified
-
-        const url = `https://api.lyricfind.com/lyric.do?apikey=${apiKey}&territory=${territory}&reqtype=default&trackid=isrc:${isrcKey}&output=json&useragent=${encodeURIComponent(userAgent)}`;
-
-        if (isrcKey === 'not-available') {
-            return successRes(res, 404, false, "Lyrics Not Found", null);
-        }
-
-        const response = await axios.get(url);
-        console.log(response.data, "response");
-
-        let resObj = {};
-
-        if (response?.data?.response?.code === 204) {
-            return successRes(res, 404, false, "Lyrics Not Found", null);
-        } else if (response && response.data && response.data.track) {
-            resObj = response.data.track;
-            return successRes(res, 200, true, "Lyrics Fetched Successfully", resObj);
-        } else {
-            return res.status(500).send({ error: "Unexpected response format from lyrics API" });
-        }
-    } catch (error) {
-        console.error("Error fetching song details:", error.message);
-        res.status(500).send({ error: error.message });
-    }
-};
-
+//from spotify
 module.exports.searchSAA = async (req, res) => {
     const { type, query } = req.body;
 
@@ -451,13 +230,12 @@ module.exports.searchSAA = async (req, res) => {
 };
 
 //in this we will get all songs list of particular artist but isrc will not come in response so we will need to fetch isrc on particular track id
+//from spotify
 module.exports.artistSong = async (req, res) => {
     const { artistId, limit, offset } = req.query;
 
     if (!artistId) {
-        return res
-            .status(400)
-            .json({ success: false, message: "Artist ID is required" });
+        return res.status(400).json({ success: false, message: "Artist ID is required" });
     }
 
     try {
@@ -467,7 +245,6 @@ module.exports.artistSong = async (req, res) => {
                 .status(500)
                 .json({ success: false, message: "Failed to get access token" });
         }
-
         const albumsResponse = await axios.get(
             `https://api.spotify.com/v1/artists/${artistId}/albums`,
             {
@@ -479,88 +256,13 @@ module.exports.artistSong = async (req, res) => {
                 // }
             }
         );
-
         const albums = albumsResponse.data.items;
-
         let tracks = [];
-        // for (const album of albums) {
-        //     const albumTracksResponse = await axios.get(`https://api.spotify.com/v1/albums/${album.id}/tracks`, {
-        //         headers: {
-        //             'Authorization': `Bearer ${accessToken}`
-        //         },
-        //         params: {
-        //             limit: limit || 10, // Default limit to 10 if not provided
-        //             offset: offset || 0 // Default offset to 0 if not provided
-        //         }
-        //     });
-        //     tracks = tracks.concat(albumTracksResponse.data.items);
-        // }
-
-        return res
-            .status(200)
-            .json({ success: true, data: albums, total: tracks.length });
+        return res.status(200).json({ success: true, data: albums, total: tracks.length });
     } catch (error) {
         console.error("Error fetching artist songs:", error);
-        return res
-            .status(500)
-            .json({ success: false, message: "Internal Server Error" });
+        return res.status(500).json({ success: false, message: "Internal Server Error" });
     }
-};
-
-module.exports.getLyricsUser = async (req, res) => {
-    try {
-        const { key } = req.body;
-        let isrcKey;
-        if (key.length == 22) {
-            isrcKey = await getISRC(key);
-        } else {
-            isrcKey = key;
-        }
-        const territory = "IN";
-        const apiKey = process.env.LF_API_KEY || "5f99ebb429f9d2b9e13998f93943b34a"; // Use environment variable
-        const url = `https://api.lyricfind.com/lyric.do?apikey=${apiKey}&territory=${territory}&reqtype=default&trackid=isrc:${isrcKey}&output=json`;
-
-
-        const response = await axios.get(url);
-
-        const xmlData = response.data;
-        const parser = new xml2js.Parser();
-        const jsonData = await parser.parseStringPromise(xmlData);
-
-        if (
-            !jsonData ||
-            !jsonData.lyricfind ||
-            !jsonData.lyricfind.track ||
-            jsonData.lyricfind.track.length === 0
-        ) {
-            return successRes(res, 404, false, "No Lyrics Found", null);
-        }
-
-        const track = jsonData.lyricfind.track[0];
-        let lyrics = track.lyrics[0];
-
-        const resObj = {
-            title: track?.title[0],
-            artist: track?.artists[0].artist[0]["_"],
-            lyrics: lyrics,
-        };
-
-        return successRes(res, 200, true, "Lyrics fectched Successfully", resObj);
-    } catch (error) {
-        console.error("Error fetching song details:", error.message);
-        res.status(500).send({ error: error.message });
-    }
-};
-
-const getISRC = async (trackId) => {
-    const accessToken = await getAccessToken();
-    const trackUrl = `https://api.spotify.com/v1/tracks/${trackId}`;
-    const response = await axios.get(trackUrl, {
-        headers: {
-            Authorization: `Bearer ${accessToken}`,
-        },
-    });
-    return response.data.external_ids.isrc;
 };
 
 module.exports.getAlbumSong = async (req, res) => {
@@ -649,11 +351,11 @@ module.exports.searchLyricsFindSongs = async (req, res) => {
     console.log(offset, "offset")
     let apiUrl = "";
     if (type === "track") {
-        apiUrl = `https://api.lyricfind.com/search.do?apikey=9d2330933c7ca5d0c36aa228f372d87b&territory=IN&reqtype=default&searchtype=track&lyrics=${query}&page=${page}&limit=${limit}&offset=${offset}`;
+        apiUrl = `https://api.lyricfind.com/search.do?apikey=aa7b666eab90a0994641e90bf02dd18b&territory=IN&reqtype=default&searchtype=track&lyrics=${query}&page=${page}&limit=${limit}&offset=${offset}`;
     } else if (type === "artist") {
-        apiUrl = `https://api.lyricfind.com/search.do?reqtype=default&apikey=9d2330933c7ca5d0c36aa228f372d87b&territory=IN&searchtype=track&artist=${query}&page=${page}&limit=${limit}&offset=${offset}`;
+        apiUrl = `https://api.lyricfind.com/search.do?reqtype=default&apikey=aa7b666eab90a0994641e90bf02dd18b&territory=IN&searchtype=track&artist=${query}&page=${page}&limit=${limit}&offset=${offset}`;
     } else if (type === "album") {
-        apiUrl = `https://api.lyricfind.com/search.do?reqtype=default&apikey=9d2330933c7ca5d0c36aa228f372d87b&territory=IN&searchtype=track&album=${query}&page=${page}&limit=${limit}&offset=${offset}`;
+        apiUrl = `https://api.lyricfind.com/search.do?reqtype=default&apikey=aa7b666eab90a0994641e90bf02dd18b&territory=IN&searchtype=track&album=${query}&page=${page}&limit=${limit}&offset=${offset}`;
     }
 
     try {
@@ -698,3 +400,41 @@ module.exports.searchLyricsFindSongs = async (req, res) => {
             .json({ success: false, message: "Internal Server Error" });
     }
 }
+
+
+module.exports.getLyricsAdmin = async (req, res) => {
+    try {
+        console.log("entering")
+        const { isrcKey } = req.body;
+        const territory = "IN";
+        const apiKey = process.env.LF_API_KEY;
+        const userAgent = req.headers['user-agent'] || 'YourAppName/1.0';
+
+        const url = `https://api.lyricfind.com/lyric.do?apikey=${apiKey}&territory=${territory}&reqtype=default&trackid=isrc:${isrcKey}&output=json&useragent=${encodeURIComponent(userAgent)}`;
+
+        if (isrcKey === 'not-available') {
+            return successRes(res, 404, false, "Lyrics Not Found", null);
+        }
+
+        const response = await axios.get(url);
+        console.log(response.data.response.code, "response");
+
+        if (response?.data?.response?.code === 206) {
+            return successRes(res, 404, false, "Lyrics Not Found", null);
+        }
+
+        let resObj = {};
+
+        if (response?.data?.response?.code === 204) {
+            return successRes(res, 404, false, "Lyrics Not Found", null);
+        } else if (response && response.data && response.data.track) {
+            resObj = response.data.track;
+            return successRes(res, 200, true, "Lyrics Fetched Successfully", resObj);
+        } else {
+            return res.status(500).send({ error: "Unexpected response format from lyrics API" });
+        }
+    } catch (error) {
+        console.error("Error fetching song details:", error.message);
+        res.status(500).send({ error: error.message });
+    }
+};
