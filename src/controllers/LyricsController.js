@@ -188,7 +188,9 @@ module.exports.searchSong = async (req, res) => {
 
 //from spotify
 module.exports.searchSAA = async (req, res) => {
-    const { type, query } = req.body;
+    const { type, query, page } = req.body;
+    const limit = 10;
+    let offset = limit * page - limit
 
     // Validate type parameter
     const validTypes = ["artist", "track", "album"];
@@ -211,7 +213,8 @@ module.exports.searchSAA = async (req, res) => {
                 params: {
                     q: query,
                     type: type,
-                    limit: 50,
+                    limit: limit,
+                    offset: offset
                 },
             }
         );
@@ -247,9 +250,6 @@ module.exports.artistSong = async (req, res) => {
                 headers: {
                     Authorization: `Bearer ${accessToken}`,
                 },
-                // params: {
-                //     include_groups: 'album',
-                // }
             }
         );
         const albums = albumsResponse.data.items;
@@ -264,6 +264,7 @@ module.exports.artistSong = async (req, res) => {
 module.exports.getAlbumSong = async (req, res) => {
     try {
         const { albumId } = req.query;
+        console.log(albumId, "albumid")
         let tracks = [];
         let accessToken = await getAccessToken();
         await axios
@@ -284,52 +285,6 @@ module.exports.getAlbumSong = async (req, res) => {
 };
 
 // =====================================Lyrics Find Apis=======================================================
-
-//for user and admin both
-// module.exports.searchLyricsFindSongs = async (req, res) => {
-//     const { type = 'track', query } = req.body;
-//     console.log(query, "query")
-
-//     const validTypes = ["artist", "track", "album"];
-//     if (!validTypes.includes(type)) {
-//         return res
-//             .status(400)
-//             .json({ success: false, message: "Invalid search type" });
-//     }
-
-//     let apiUrl = "";
-//     if (type === "track") {
-//         apiUrl = `https://api.lyricfind.com/search.do?apikey=9d2330933c7ca5d0c36aa228f372d87b&territory=IN&reqtype=default&searchtype=track&lyrics=${query}`;
-//     } else if (type === "artist") {
-//         apiUrl = `https://api.lyricfind.com/search.do?reqtype=default&apikey=9d2330933c7ca5d0c36aa228f372d87b&territory=IN&searchtype=track&artist=${query}`;
-//     } else if (type === "album") {
-//         apiUrl = `https://api.lyricfind.com/search.do?reqtype=default&apikey=9d2330933c7ca5d0c36aa228f372d87b&territory=IN&searchtype=track&album=${query}`;
-//     }
-
-//     try {
-//         const searchResponse = await axios.get(apiUrl);
-
-//         xml2js.parseString(
-//             searchResponse.data,
-//             { explicitArray: false },
-//             (err, result) => {
-//                 if (err) {
-//                     console.error("Error parsing XML:", err);
-//                     return res.status(500).json({
-//                         success: false,
-//                         message: "Error parsing response from API",
-//                     });
-//                 }
-//                 return successRes(res, 200, true, "Search Results", result);
-//             }
-//         );
-//     } catch (error) {
-//         console.error("Error searching LyricFind API:", error);
-//         return res
-//             .status(500)
-//             .json({ success: false, message: "Internal Server Error" });
-//     }
-// };
 
 //with pagijnation
 
@@ -397,14 +352,37 @@ module.exports.searchLyricsFindSongs = async (req, res) => {
     }
 }
 
+const SPOTIFY_API_URL = 'https://api.spotify.com/v1';
+
+async function getISRCFromSpotify(trackId) {
+    try {
+        const accessToken = await getAccessToken();
+
+        const response = await axios.get(`${SPOTIFY_API_URL}/tracks/${trackId}`, {
+            headers: {
+                Authorization: `Bearer ${accessToken}`
+            }
+        });
+        return response.data.external_ids.isrc;
+    } catch (error) {
+        console.error('Error fetching ISRC from Spotify:', error.message);
+        throw new Error('Unable to fetch ISRC');
+    }
+}
+
 
 module.exports.getLyricsAdmin = async (req, res) => {
     try {
         console.log("entering")
-        const { isrcKey } = req.body;
+        let { isrcKey } = req.body;
+        console.log(isrcKey, "11111111111")
         const territory = "IN";
         const apiKey = process.env.LF_API_KEY;
         const userAgent = req.headers['user-agent'] || 'YourAppName/1.0';
+
+        if (isrcKey.length == 22) {
+            isrcKey = await getISRCFromSpotify(isrcKey);
+        }
 
         const url = `https://api.lyricfind.com/lyric.do?apikey=${apiKey}&territory=${territory}&reqtype=default&trackid=isrc:${isrcKey}&output=json&useragent=${encodeURIComponent(userAgent)}`;
 
