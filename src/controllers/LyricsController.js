@@ -6,7 +6,7 @@ const hotAlbmubModel = require("../models/hotAlbmubModel");
 const topChartModel = require('../models/topChartModel')
 const xml2js = require("xml2js");
 
-//access token for spotify
+// access token for spotify
 async function getAccessToken() {
     const { SPOTIFY_CLIENT_ID, SPOTIFY_CLIENT_SECRET } = process.env;
     const token = Buffer.from(
@@ -193,17 +193,13 @@ module.exports.searchSAA = async (req, res) => {
     // Validate type parameter
     const validTypes = ["artist", "track", "album"];
     if (!validTypes.includes(type)) {
-        return res
-            .status(400)
-            .json({ success: false, message: "Invalid search type" });
+        return successRes(res, 400, false, "Invalid Search Type", [])
     }
 
     try {
         const accessToken = await getAccessToken();
         if (!accessToken) {
-            return res
-                .status(500)
-                .json({ success: false, message: "Failed to get access token" });
+            return successRes(res, 500, false, "Failed to get access token", [])
         }
 
         const searchResponse = await axios.get(
@@ -220,7 +216,7 @@ module.exports.searchSAA = async (req, res) => {
             }
         );
 
-        return res.status(200).json({ success: true, data: searchResponse.data });
+        return successRes(res, 200, true, "Search List", searchResponse.data)
     } catch (error) {
         console.error("Error searching Spotify API:", error);
         return res

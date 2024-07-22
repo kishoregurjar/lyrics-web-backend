@@ -27,65 +27,190 @@ const router = express.Router();
 const validation = (validations) => [...validations, handleValidationErrors];
 
 /* Auth Routes */
-router.post("/login-admin", validation([validateAdminLogin]), controller.adminController.adminLogin);
+router.post(
+  "/login-admin",
+  validation([validateAdminLogin]),
+  controller.adminController.adminLogin
+);
 
-router.post("/forget-password", validation([validateForgetPassword]), controller.adminController.forgetPassword);
+router.post(
+  "/forget-password",
+  validation([validateForgetPassword]),
+  controller.adminController.forgetPassword
+);
 
-router.put("/reset-password", validation([validateResetPassword]), controller.adminController.resetPassword);
+router.put(
+  "/reset-password",
+  validation([validateResetPassword]),
+  controller.adminController.resetPassword
+);
 
-router.post("/upload-profile-picture", verifyAdminToken, uploadAdminAvatar, controller.adminController.uploadAdminAvatar);
+router.post(
+  "/upload-profile-picture",
+  verifyAdminToken,
+  uploadAdminAvatar,
+  controller.adminController.uploadAdminAvatar
+);
 
-router.put("/change-password", validation([validateChangePassword]), verifyAdminToken, controller.adminController.changePassword);
+router.put(
+  "/change-password",
+  validation([validateChangePassword]),
+  verifyAdminToken,
+  controller.adminController.changePassword
+);
 
-router.put("/edit-admin-profile", validation([validateEditAdminProfile]), verifyAdminToken, controller.adminController.editAdminProfile);
+router.put(
+  "/edit-admin-profile",
+  validation([validateEditAdminProfile]),
+  verifyAdminToken,
+  controller.adminController.editAdminProfile
+);
 
-router.get("/admin-profile", verifyAdminToken, controller.adminController.showAdminProfile);
+router.get(
+  "/admin-profile",
+  verifyAdminToken,
+  controller.adminController.showAdminProfile
+);
 
 /* Admin Access */
-router.get("/get-user-feedbacks-list", verifyAdminToken, controller.adminController.getUserFeedbacksList);
+router.get(
+  "/get-user-feedbacks-list",
+  verifyAdminToken,
+  controller.adminController.getUserFeedbacksList
+);
 
-router.post("/upload-carousel-images", verifyAdminToken, uploadCarouselImages, controller.adminController.uploadCarouselImages);
+router.post(
+  "/upload-carousel-images",
+  verifyAdminToken,
+  uploadCarouselImages,
+  controller.adminController.uploadCarouselImages
+);
 
 /* Testimonial Routes */
-router.post("/add-testimonial", validation([validateAddTestimonial]), verifyAdminToken, controller.adminController.addTestimonial);
+router.post(
+  "/add-testimonial",
+  validation([validateAddTestimonial]),
+  verifyAdminToken,
+  controller.adminController.addTestimonial
+);
 
-router.put("/update-testimonial", validation([validateUpdateTestimonial]), verifyAdminToken, controller.adminController.updateTestimonial);
+router.put(
+  "/update-testimonial",
+  validation([validateUpdateTestimonial]),
+  verifyAdminToken,
+  controller.adminController.updateTestimonial
+);
 
-router.put("/delete-testimonial", verifyAdminToken, controller.adminController.deleteTestimonial);
+router.put(
+  "/delete-testimonial",
+  verifyAdminToken,
+  controller.adminController.deleteTestimonial
+);
 
-router.get("/get-testimonials-list", verifyAdminToken, controller.adminController.getTestimonialsList);
+router.get(
+  "/get-testimonials-list",
+  verifyAdminToken,
+  controller.adminController.getTestimonialsList
+);
 
-router.post("/upload-testimonial-avatar", verifyAdminToken, uploadTestimonialAvatar, controller.adminController.uploadTestimonialAvatar);
+router.post(
+  "/upload-testimonial-avatar",
+  verifyAdminToken,
+  uploadTestimonialAvatar,
+  controller.adminController.uploadTestimonialAvatar
+);
 
 /* News Routes */
-router.post("/add-news", validation([validateAddNews]), verifyAdminToken, controller.adminController.addNews);
-router.get("/get-news-list", controller.adminController.getNewsList);
-router.get("/get-news", controller.adminController.getNewsById);
-router.put("/update-news", validation([validateUpdateNews]), verifyAdminToken, controller.adminController.updateNews);
-router.put("/delete-news", verifyAdminToken, controller.adminController.deleteNews);
+router.post(
+  "/add-news",
+  validation([validateAddNews]),
+  verifyAdminToken,
+  controller.adminController.addNews
+);
 
-router.post("/upload-news-avatar", verifyAdminToken, uploadNewsAvatar, controller.adminController.uploadNewsAvatar);
+router.get("/get-news-list", controller.adminController.getNewsList);
+
+router.get("/get-news", controller.adminController.getNewsById);
+
+router.put(
+  "/update-news",
+  validation([validateUpdateNews]),
+  verifyAdminToken,
+  controller.adminController.updateNews
+);
+
+router.put(
+  "/delete-news",
+  verifyAdminToken,
+  controller.adminController.deleteNews
+);
+
+router.post(
+  "/upload-news-avatar",
+  verifyAdminToken,
+  uploadNewsAvatar,
+  controller.adminController.uploadNewsAvatar
+);
 
 /* Hot Albums Routes */
-router.post("/add-hot-album", verifyAdminToken, controller.lyricsController.addHotSong);
+router.post(
+  "/add-hot-album",
+  verifyAdminToken,
+  controller.lyricsController.addHotSong
+);
 
-router.get("/get-hot-album", verifyAdminToken, controller.lyricsController.getHotSongList);
+router.get(
+  "/get-hot-album",
+  verifyAdminToken,
+  controller.lyricsController.getHotSongList
+);
 
 router.get("/search-song", controller.lyricsController.searchSong);
 
-router.delete("/delete-song", verifyAdminToken, controller.lyricsController.deleteHotSong);
+router.delete(
+  "/delete-song",
+  verifyAdminToken,
+  controller.lyricsController.deleteHotSong
+);
 
 /* Lyrics Routes */
 router.post("/get-admin-lyrics", controller.lyricsController.getLyricsAdmin);
 
 /* Top Chart Routes*/
 router.get("/top-chart-list", controller.topChartController.getTopChartList);
+
 router.get("/top-chart-details", controller.topChartController.topChartDetails);
-router.delete("/delete-top-chart", verifyAdminToken, controller.topChartController.deleteTopChart);
+
+router.delete(
+  "/delete-top-chart",
+  verifyAdminToken,
+  controller.topChartController.deleteTopChart
+);
 
 /* Comment Routes */
-router.get("/get-user-comments-list", controller.userController.getUserComments);
-router.put("/update-user-comment-status", verifyAdminToken, controller.userController.updateUserCommentStatus);
-router.delete("/delete-user-comment", verifyAdminToken, controller.adminController.deleteUserCommentByAdmin);
+router.get(
+  "/get-user-comments-list",
+  controller.userController.getUserComments
+);
+
+router.put(
+  "/update-user-comment-status",
+  verifyAdminToken,
+  controller.userController.updateUserCommentStatus
+);
+
+router.delete(
+  "/delete-user-comment",
+  verifyAdminToken,
+  controller.adminController.deleteUserCommentByAdmin
+);
+
+/* Spotify Powered APIs */
+router.post("/search-songs", controller.spotifyController.searchSongSpotify);
+router.get(
+  "/artist/song-search",
+  controller.spotifyController.artistSongSpotify
+);
+router.get("/album/song-search", controller.spotifyController.albumSongSpotify);
 
 module.exports = router;
