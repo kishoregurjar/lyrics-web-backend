@@ -399,6 +399,7 @@ module.exports.getAlbumSong = async (req, res) => {
                 },
             })
             .then((response) => {
+                return successRes(res, 200, true, "Album Songs", response.data.items)
                 res.send(response.data.items);
             })
             .catch((error) => {
