@@ -212,5 +212,9 @@ router.get(
   controller.spotifyController.artistSongSpotify
 );
 router.get("/album/song-search", controller.spotifyController.albumSongSpotify);
+router.get("/album/songs", controller.lyricsController.getAlbumSong); //from spotify
+router.get("/artist/song", controller.lyricsController.artistSong); //from spotify
+
+
 
 module.exports = router;

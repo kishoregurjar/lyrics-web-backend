@@ -188,7 +188,7 @@ module.exports.searchSong = async (req, res) => {
 
 //from spotify
 module.exports.searchSAA = async (req, res) => {
-    const { type, query, page } = req.body;
+    const { type, query, page = 1 } = req.body;
     const limit = 10;
     let offset = limit * page - limit
 
@@ -230,8 +230,39 @@ module.exports.searchSAA = async (req, res) => {
 
 //in this we will get all songs list of particular artist but isrc will not come in response so we will need to fetch isrc on particular track id
 //from spotify
+// module.exports.artistSong = async (req, res) => {
+//     const { artistId } = req.query;
+
+//     if (!artistId) {
+//         return res.status(400).json({ success: false, message: "Artist ID is required" });
+//     }
+
+//     try {
+//         const accessToken = await getAccessToken();
+//         if (!accessToken) {
+//             return res
+//                 .status(500)
+//                 .json({ success: false, message: "Failed to get access token" });
+//         }
+//         const albumsResponse = await axios.get(
+//             `https://api.spotify.com/v1/artists/${artistId}/albums`,
+//             {
+//                 headers: {
+//                     Authorization: `Bearer ${accessToken}`,
+//                 },
+//             }
+//         );
+//         const albums = albumsResponse.data.items;
+//         let tracks = [];
+//         return res.status(200).json({ success: true, data: albums, total: tracks.length });
+//     } catch (error) {
+//         console.error("Error fetching artist songs:", error);
+//         return res.status(500).json({ success: false, message: "Internal Server Error" });
+//     }
+// };
+
 module.exports.artistSong = async (req, res) => {
-    const { artistId, limit, offset } = req.query;
+    const { artistId } = req.query;
 
     if (!artistId) {
         return res.status(400).json({ success: false, message: "Artist ID is required" });
@@ -244,6 +275,8 @@ module.exports.artistSong = async (req, res) => {
                 .status(500)
                 .json({ success: false, message: "Failed to get access token" });
         }
+
+        // Fetch albums
         const albumsResponse = await axios.get(
             `https://api.spotify.com/v1/artists/${artistId}/albums`,
             {
@@ -253,8 +286,22 @@ module.exports.artistSong = async (req, res) => {
             }
         );
         const albums = albumsResponse.data.items;
+
+        // Fetch tracks for each album
         let tracks = [];
-        return res.status(200).json({ success: true, data: albums, total: tracks.length });
+        for (const album of albums) {
+            const albumTracksResponse = await axios.get(
+                `https://api.spotify.com/v1/albums/${album.id}/tracks`,
+                {
+                    headers: {
+                        Authorization: `Bearer ${accessToken}`,
+                    },
+                }
+            );
+            tracks = tracks.concat(albumTracksResponse.data.items);
+        }
+
+        return res.status(200).json({ success: true, data: tracks, total: tracks.length });
     } catch (error) {
         console.error("Error fetching artist songs:", error);
         return res.status(500).json({ success: false, message: "Internal Server Error" });
@@ -264,8 +311,6 @@ module.exports.artistSong = async (req, res) => {
 module.exports.getAlbumSong = async (req, res) => {
     try {
         const { albumId } = req.query;
-        console.log(albumId, "albumid")
-        let tracks = [];
         let accessToken = await getAccessToken();
         await axios
             .get(`https://api.spotify.com/v1/albums/${albumId}/tracks`, {
@@ -373,9 +418,7 @@ async function getISRCFromSpotify(trackId) {
 
 module.exports.getLyricsAdmin = async (req, res) => {
     try {
-        console.log("entering")
         let { isrcKey } = req.body;
-        console.log(isrcKey, "11111111111")
         const territory = "IN";
         const apiKey = process.env.LF_API_KEY;
         const userAgent = req.headers['user-agent'] || 'YourAppName/1.0';
