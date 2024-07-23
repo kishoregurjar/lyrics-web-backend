@@ -192,7 +192,6 @@ module.exports.searchSAA = async (req, res) => {
     const limit = 10;
     let offset = limit * page - limit
 
-    // Validate type parameter
     const validTypes = ["artist", "track", "album"];
     if (!validTypes.includes(type)) {
         return successRes(res, 400, false, "Invalid Search Type", [])
@@ -221,10 +220,7 @@ module.exports.searchSAA = async (req, res) => {
 
         return successRes(res, 200, true, "Search List", searchResponse.data)
     } catch (error) {
-        console.error("Error searching Spotify API:", error);
-        return res
-            .status(500)
-            .json({ success: false, message: "Internal Server Error" });
+        return catchRes(res, error)
     }
 };
 
@@ -265,22 +261,20 @@ module.exports.artistSong = async (req, res) => {
     const { artistId, limit = 20, page = 1 } = req.query;
 
     if (!artistId) {
-        return res.status(400).json({ success: false, message: "Artist ID is required" });
+        return successRes(res, 400, false, "Artist ID is required")
     }
 
-    // Validate and convert limit and page to integers
     const limitValue = parseInt(limit, 10);
     const pageValue = parseInt(page, 10);
 
     if (isNaN(limitValue) || limitValue <= 0) {
-        return res.status(400).json({ success: false, message: "Invalid limit value" });
+        return successRes(res, 400, false, "Invalid limit value");
     }
 
     if (isNaN(pageValue) || pageValue <= 0) {
-        return res.status(400).json({ success: false, message: "Invalid page value" });
+        return successRes(res, 400, false, "Invalid page value");
     }
 
-    // Calculate offset based on page
     const offset = (pageValue - 1) * limitValue;
 
     try {
@@ -291,7 +285,6 @@ module.exports.artistSong = async (req, res) => {
                 .json({ success: false, message: "Failed to get access token" });
         }
 
-        // Fetch albums with pagination parameters
         const albumsResponse = await axios.get(
             `https://api.spotify.com/v1/artists/${artistId}/albums`,
             {
@@ -299,14 +292,14 @@ module.exports.artistSong = async (req, res) => {
                     Authorization: `Bearer ${accessToken}`,
                 },
                 params: {
-                    limit: limitValue, // Number of items per page
-                    offset: offset // Offset for pagination
+                    limit: limitValue,
+                    offset: offset
                 }
             }
         );
 
         const albums = albumsResponse.data.items;
-        const total = albumsResponse.data.total; // Total number of albums
+        const total = albumsResponse.data.total;
 
         return res.status(200).json({
             success: true,
@@ -317,76 +310,9 @@ module.exports.artistSong = async (req, res) => {
             totalPages: Math.ceil(total / limitValue)
         });
     } catch (error) {
-        console.error("Error fetching artist songs:", error);
-        return res.status(500).json({ success: false, message: "Internal Server Error" });
+        return catchRes(res, error)
     }
 };
-
-// module.exports.artistSong = async (req, res) => {
-//     const { artistId, page = 1 } = req.query;
-//     const limit = 10; // Number of songs per page
-//     const offset = (page - 1) * limit;
-
-//     if (!artistId) {
-//         return res.status(400).json({ success: false, message: "Artist ID is required" });
-//     }
-
-//     try {
-//         const accessToken = await getAccessToken();
-//         if (!accessToken) {
-//             return res
-//                 .status(500)
-//                 .json({ success: false, message: "Failed to get access token" });
-//         }
-
-//         // Fetch albums
-//         const albumsResponse = await axios.get(
-//             `https://api.spotify.com/v1/artists/${artistId}/albums`,
-//             {
-//                 headers: {
-//                     Authorization: `Bearer ${accessToken}`,
-//                 },
-//                 params: {
-//                     limit: 5 // Limit the number of albums to fetch
-//                 }
-//             }
-//         );
-//         const albums = albumsResponse.data.items;
-
-//         // Fetch tracks in parallel
-//         const trackPromises = albums.map(album =>
-//             axios.get(
-//                 `https://api.spotify.com/v1/albums/${album.id}/tracks`,
-//                 {
-//                     headers: {
-//                         Authorization: `Bearer ${accessToken}`,
-//                     },
-//                     params: {
-//                         limit: 50 // Limit the number of tracks per album
-//                     }
-//                 }
-//             )
-//         );
-//         const trackResponses = await Promise.all(trackPromises);
-
-//         // Flatten and collect all tracks
-//         let tracks = trackResponses.flatMap(response => response.data.items);
-
-//         // Paginate results
-//         const paginatedTracks = tracks.slice(offset, offset + limit);
-
-//         return res.status(200).json({
-//             success: true,
-//             data: paginatedTracks,
-//             total: tracks.length,
-//             page: parseInt(page),
-//             totalPages: Math.ceil(tracks.length / limit)
-//         });
-//     } catch (error) {
-//         console.error("Error fetching artist songs:", error);
-//         return res.status(500).json({ success: false, message: "Internal Server Error" });
-//     }
-// };
 
 module.exports.getAlbumSong = async (req, res) => {
     try {
@@ -400,13 +326,12 @@ module.exports.getAlbumSong = async (req, res) => {
             })
             .then((response) => {
                 return successRes(res, 200, true, "Album Songs", response.data.items)
-                res.send(response.data.items);
             })
             .catch((error) => {
                 console.log(error.response);
             });
     } catch (error) {
-        res.status(500).send({ error: error.message });
+        return catchRes(res, error)
     }
 };
 
@@ -471,10 +396,7 @@ module.exports.searchLyricsFindSongs = async (req, res) => {
             }
         );
     } catch (error) {
-        console.error("Error searching LyricFind API:", error.message);
-        return res
-            .status(500)
-            .json({ success: false, message: "Internal Server Error" });
+        return catchRes(res, error)
     }
 }
 
@@ -515,7 +437,6 @@ module.exports.getLyricsAdmin = async (req, res) => {
         }
 
         const response = await axios.get(url);
-        console.log(response.data.response.code, "response");
 
         if (response?.data?.response?.code === 206) {
             return successRes(res, 404, false, "Lyrics Not Found", null);
@@ -532,7 +453,6 @@ module.exports.getLyricsAdmin = async (req, res) => {
             return res.status(500).send({ error: "Unexpected response format from lyrics API" });
         }
     } catch (error) {
-        console.error("Error fetching song details:", error.message);
-        res.status(500).send({ error: error.message });
+        return catchRes(res, error)
     }
 };
