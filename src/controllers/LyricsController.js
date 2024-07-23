@@ -262,11 +262,26 @@ module.exports.searchSAA = async (req, res) => {
 // };
 
 module.exports.artistSong = async (req, res) => {
-    const { artistId } = req.query;
+    const { artistId, limit = 20, page = 1 } = req.query;
 
     if (!artistId) {
         return res.status(400).json({ success: false, message: "Artist ID is required" });
     }
+
+    // Validate and convert limit and page to integers
+    const limitValue = parseInt(limit, 10);
+    const pageValue = parseInt(page, 10);
+
+    if (isNaN(limitValue) || limitValue <= 0) {
+        return res.status(400).json({ success: false, message: "Invalid limit value" });
+    }
+
+    if (isNaN(pageValue) || pageValue <= 0) {
+        return res.status(400).json({ success: false, message: "Invalid page value" });
+    }
+
+    // Calculate offset based on page
+    const offset = (pageValue - 1) * limitValue;
 
     try {
         const accessToken = await getAccessToken();
@@ -276,37 +291,102 @@ module.exports.artistSong = async (req, res) => {
                 .json({ success: false, message: "Failed to get access token" });
         }
 
-        // Fetch albums
+        // Fetch albums with pagination parameters
         const albumsResponse = await axios.get(
             `https://api.spotify.com/v1/artists/${artistId}/albums`,
             {
                 headers: {
                     Authorization: `Bearer ${accessToken}`,
                 },
+                params: {
+                    limit: limitValue, // Number of items per page
+                    offset: offset // Offset for pagination
+                }
             }
         );
+
         const albums = albumsResponse.data.items;
+        const total = albumsResponse.data.total; // Total number of albums
 
-        // Fetch tracks for each album
-        let tracks = [];
-        for (const album of albums) {
-            const albumTracksResponse = await axios.get(
-                `https://api.spotify.com/v1/albums/${album.id}/tracks`,
-                {
-                    headers: {
-                        Authorization: `Bearer ${accessToken}`,
-                    },
-                }
-            );
-            tracks = tracks.concat(albumTracksResponse.data.items);
-        }
-
-        return res.status(200).json({ success: true, data: tracks, total: tracks.length });
+        return res.status(200).json({
+            success: true,
+            data: albums,
+            total,
+            limit: limitValue,
+            page: pageValue,
+            totalPages: Math.ceil(total / limitValue)
+        });
     } catch (error) {
         console.error("Error fetching artist songs:", error);
         return res.status(500).json({ success: false, message: "Internal Server Error" });
     }
 };
+
+// module.exports.artistSong = async (req, res) => {
+//     const { artistId, page = 1 } = req.query;
+//     const limit = 10; // Number of songs per page
+//     const offset = (page - 1) * limit;
+
+//     if (!artistId) {
+//         return res.status(400).json({ success: false, message: "Artist ID is required" });
+//     }
+
+//     try {
+//         const accessToken = await getAccessToken();
+//         if (!accessToken) {
+//             return res
+//                 .status(500)
+//                 .json({ success: false, message: "Failed to get access token" });
+//         }
+
+//         // Fetch albums
+//         const albumsResponse = await axios.get(
+//             `https://api.spotify.com/v1/artists/${artistId}/albums`,
+//             {
+//                 headers: {
+//                     Authorization: `Bearer ${accessToken}`,
+//                 },
+//                 params: {
+//                     limit: 5 // Limit the number of albums to fetch
+//                 }
+//             }
+//         );
+//         const albums = albumsResponse.data.items;
+
+//         // Fetch tracks in parallel
+//         const trackPromises = albums.map(album =>
+//             axios.get(
+//                 `https://api.spotify.com/v1/albums/${album.id}/tracks`,
+//                 {
+//                     headers: {
+//                         Authorization: `Bearer ${accessToken}`,
+//                     },
+//                     params: {
+//                         limit: 50 // Limit the number of tracks per album
+//                     }
+//                 }
+//             )
+//         );
+//         const trackResponses = await Promise.all(trackPromises);
+
+//         // Flatten and collect all tracks
+//         let tracks = trackResponses.flatMap(response => response.data.items);
+
+//         // Paginate results
+//         const paginatedTracks = tracks.slice(offset, offset + limit);
+
+//         return res.status(200).json({
+//             success: true,
+//             data: paginatedTracks,
+//             total: tracks.length,
+//             page: parseInt(page),
+//             totalPages: Math.ceil(tracks.length / limit)
+//         });
+//     } catch (error) {
+//         console.error("Error fetching artist songs:", error);
+//         return res.status(500).json({ success: false, message: "Internal Server Error" });
+//     }
+// };
 
 module.exports.getAlbumSong = async (req, res) => {
     try {
