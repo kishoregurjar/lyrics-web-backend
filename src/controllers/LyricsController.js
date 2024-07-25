@@ -391,7 +391,6 @@ module.exports.getArtistsByLetter = async (req, res) => {
         const totalAvailable = response.data.artists.total;
         const totalFiltered = artists.length;
 
-        // Calculate total pages
         const totalPages = Math.ceil(totalAvailable / limit);
 
         let data = {
@@ -407,6 +406,63 @@ module.exports.getArtistsByLetter = async (req, res) => {
         };
 
         return successRes(res, 200, true, "Artist Data", data);
+
+    } catch (error) {
+        console.error(error.stack);
+        return catchRes(res, error);
+    }
+};
+
+module.exports.getArtistSongs = async (req, res) => {
+    try {
+        const { artistId } = req.query;
+
+        if (!artistId) {
+            return res.status(400).json({ message: 'Artist ID is required' });
+        }
+
+        const token = await getAccessToken();
+        if (!token) {
+            return res.status(500).json({ message: 'Failed to retrieve access token' });
+        }
+
+        const albumsResponse = await axios.get(`https://api.spotify.com/v1/artists/${artistId}/albums`, {
+            headers: {
+                'Authorization': `Bearer ${token}`
+            },
+            params: {
+                limit: 5,
+                include_groups: 'album,single'
+            }
+        });
+
+        const albums = albumsResponse.data.items;
+        const tracksPromises = albums.map(album =>
+            axios.get(`https://api.spotify.com/v1/albums/${album.id}/tracks`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            })
+        );
+
+        const tracksResponses = await Promise.all(tracksPromises);
+
+        const tracks = tracksResponses.flatMap(response => response.data.items);
+
+        const formattedTracks = tracks.map(track => ({
+            id: track.id,
+            name: track.name,
+            album: track.name,
+            duration: track.duration_ms,
+            explicit: track.explicit,
+            preview_url: track.preview_url,
+            artists: track.artists.map(artist => ({
+                id: artist.id,
+                name: artist.name
+            }))
+        }));
+
+        return successRes(res, 200, true, "Artist Songs Data", formattedTracks);
 
     } catch (error) {
         console.error(error.stack);
