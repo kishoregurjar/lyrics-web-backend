@@ -388,8 +388,11 @@ module.exports.getArtistsByLetter = async (req, res) => {
             images: artist.images
         }));
 
-        const totalFiltered = artists.length;
         const totalAvailable = response.data.artists.total;
+        const totalFiltered = artists.length;
+
+        // Calculate total pages
+        const totalPages = Math.ceil(totalAvailable / limit);
 
         let data = {
             artists,
@@ -398,6 +401,7 @@ module.exports.getArtistsByLetter = async (req, res) => {
                 totalAvailable,
                 page,
                 limit,
+                totalPages,
                 nextPage: offset + limit < totalAvailable ? page + 1 : null,
             }
         };
