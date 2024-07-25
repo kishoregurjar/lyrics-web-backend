@@ -382,12 +382,12 @@ module.exports.getArtistsByLetter = async (req, res) => {
 
         const artists = response.data.artists.items.filter(artist =>
             artist.name.toLowerCase().startsWith(letter.toLowerCase())
-        ).map(artist => artist.name);
+        ).map(artist => ({ name: artist.name, id: artist.id }));
 
         const totalFiltered = artists.length;
         const totalAvailable = response.data.artists.total;
 
-        return res.status(200).json({
+        let data = {
             artists,
             pagination: {
                 total: totalFiltered,
@@ -395,9 +395,11 @@ module.exports.getArtistsByLetter = async (req, res) => {
                 page,
                 limit,
                 nextPage: offset + limit < totalAvailable ? page + 1 : null,
-                prevPage: offset > 0 ? page - 1 : null
             }
-        });
+        };
+
+        return successRes(res, 200, true, "Artist Data", data);
+
     } catch (error) {
         console.error(error.stack);
         return catchRes(res, error);
