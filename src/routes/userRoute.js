@@ -41,6 +41,7 @@ router.get("/get-news", controller.adminController.getNewsById);
 router.post("/search", controller.lyricsController.searchSAA); //from spotify
 router.get("/artist/song", controller.lyricsController.artistSong); //from spotify
 router.get("/album/songs", controller.lyricsController.getAlbumSong); //from spotify
+router.get("/artistDetails", controller.lyricsController.getArtistDetails); //from spotify
 router.post("/search-lyricfind", controller.lyricsController.searchLyricsFindSongs); //from lyricsfind
 
 //Hot Album List

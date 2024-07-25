@@ -334,6 +334,25 @@ module.exports.getAlbumSong = async (req, res) => {
     }
 };
 
+module.exports.getArtistDetails = async (req, res) => {
+    try {
+        const artistId = req.query.artistId;
+
+        const token = await getAccessToken();
+        console.log(token)
+
+        const response = await axios.get(`https://api.spotify.com/v1/artists/${artistId}`, {
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+        return successRes(res, 200, true, "ArtistDetails", response?.data)
+    } catch (error) {
+        console.log(error.stack)
+        return catchRes(res, error);
+    }
+}
+
 // =====================================Lyrics Find Apis=======================================================
 
 //with pagijnation
