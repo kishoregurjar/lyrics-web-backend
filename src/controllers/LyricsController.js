@@ -353,7 +353,6 @@ module.exports.getArtistDetails = async (req, res) => {
     }
 }
 
-
 module.exports.getArtistsByLetter = async (req, res) => {
     try {
         const { letter, limit = 10, page = 1 } = req.body;
@@ -382,7 +381,12 @@ module.exports.getArtistsByLetter = async (req, res) => {
 
         const artists = response.data.artists.items.filter(artist =>
             artist.name.toLowerCase().startsWith(letter.toLowerCase())
-        ).map(artist => ({ name: artist.name, id: artist.id }));
+        ).map(artist => ({
+            id: artist.id,
+            name: artist.name,
+            followers: artist.followers.total,
+            images: artist.images
+        }));
 
         const totalFiltered = artists.length;
         const totalAvailable = response.data.artists.total;
