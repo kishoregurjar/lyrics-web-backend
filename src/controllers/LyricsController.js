@@ -353,6 +353,57 @@ module.exports.getArtistDetails = async (req, res) => {
     }
 }
 
+
+module.exports.getArtistsByLetter = async (req, res) => {
+    try {
+        const { letter, limit = 10, page = 1 } = req.body;
+        const offset = limit * (page - 1);
+
+        if (!letter || letter.length !== 1 || !/^[A-Z]$/i.test(letter)) {
+            return res.status(400).json({ message: 'A single letter A-Z is required' });
+        }
+
+        const token = await getAccessToken();
+        if (!token) {
+            return res.status(500).json({ message: 'Failed to retrieve access token' });
+        }
+
+        const response = await axios.get('https://api.spotify.com/v1/search', {
+            headers: {
+                'Authorization': `Bearer ${token}`
+            },
+            params: {
+                q: `${letter}*`,
+                type: 'artist',
+                limit: limit,
+                offset: offset
+            }
+        });
+
+        const artists = response.data.artists.items.filter(artist =>
+            artist.name.toLowerCase().startsWith(letter.toLowerCase())
+        ).map(artist => artist.name);
+
+        const totalFiltered = artists.length;
+        const totalAvailable = response.data.artists.total;
+
+        return res.status(200).json({
+            artists,
+            pagination: {
+                total: totalFiltered,
+                totalAvailable,
+                page,
+                limit,
+                nextPage: offset + limit < totalAvailable ? page + 1 : null,
+                prevPage: offset > 0 ? page - 1 : null
+            }
+        });
+    } catch (error) {
+        console.error(error.stack);
+        return catchRes(res, error);
+    }
+};
+
 // =====================================Lyrics Find Apis=======================================================
 
 //with pagijnation
