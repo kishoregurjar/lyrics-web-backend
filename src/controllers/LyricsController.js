@@ -53,7 +53,6 @@ module.exports.addHotSong = async (req, res) => {
         }
 
         const response = await axios.get(url);
-        console.log(response, "1111111111")
         const { track, response: apiResponse } = response.data;
 
         if (apiResponse.code !== 101) {
@@ -188,8 +187,8 @@ module.exports.searchSong = async (req, res) => {
 
 //from spotify
 module.exports.searchSAA = async (req, res) => {
-    const { type, query, page = 1 } = req.body;
-    const limit = 10;
+    const { type, query, page = 1, limit = 10 } = req.body;
+
     let offset = limit * page - limit
 
     const validTypes = ["artist", "track", "album"];
@@ -341,7 +340,6 @@ module.exports.getAlbumSong = async (req, res) => {
 
 module.exports.searchLyricsFindSongs = async (req, res) => {
     const { type = 'track', query, page = 1, limit = 10 } = req.body;
-    console.log(query, "query");
 
     const validTypes = ["artist", "track", "album"];
     if (!validTypes.includes(type)) {
@@ -350,7 +348,6 @@ module.exports.searchLyricsFindSongs = async (req, res) => {
             .json({ success: false, message: "Invalid search type" });
     }
     const offset = page * limit - limit
-    console.log(offset, "offset")
     let apiUrl = "";
     if (type === "track") {
         apiUrl = `https://api.lyricfind.com/search.do?apikey=aa7b666eab90a0994641e90bf02dd18b&territory=IN&reqtype=default&searchtype=track&lyrics=${query}&page=${page}&limit=${limit}&offset=${offset}`;
