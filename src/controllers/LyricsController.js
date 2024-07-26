@@ -367,33 +367,47 @@ module.exports.getArtistsByLetter = async (req, res) => {
             return res.status(500).json({ message: 'Failed to retrieve access token' });
         }
 
-        const response = await axios.get('https://api.spotify.com/v1/search', {
-            headers: {
-                'Authorization': `Bearer ${token}`
-            },
-            params: {
-                q: `${letter}*`,
-                type: 'artist',
-                limit: limit,
-                offset: offset
+        let artists = [];
+        let totalAvailable = 0;
+        let totalFiltered = 0;
+        let totalPages = 0;
+
+        try {
+            const response = await axios.get('https://api.spotify.com/v1/search', {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                },
+                params: {
+                    q: `${letter}*`,
+                    type: 'artist',
+                    limit: limit,
+                    offset: offset
+                }
+            });
+
+            artists = response.data.artists.items.filter(artist =>
+                artist.name.toLowerCase().startsWith(letter.toLowerCase())
+            ).map(artist => ({
+                id: artist.id,
+                name: artist.name,
+                followers: artist.followers.total,
+                images: artist.images
+            }));
+
+            totalAvailable = response.data.artists.total;
+            totalFiltered = artists.length;
+            totalPages = Math.ceil(totalAvailable / limit);
+
+        } catch (error) {
+            if (error.response && error.response.status === 400) {
+                console.error('Spotify API returned a 400 error:', error.response.data);
+            } else {
+                // Re-throw error if it's not a 400 error
+                throw error;
             }
-        });
+        }
 
-        const artists = response.data.artists.items.filter(artist =>
-            artist.name.toLowerCase().startsWith(letter.toLowerCase())
-        ).map(artist => ({
-            id: artist.id,
-            name: artist.name,
-            followers: artist.followers.total,
-            images: artist.images
-        }));
-
-        const totalAvailable = response.data.artists.total;
-        const totalFiltered = artists.length;
-
-        const totalPages = Math.ceil(totalAvailable / limit);
-
-        let data = {
+        const data = {
             artists,
             pagination: {
                 total: totalFiltered,
@@ -412,6 +426,7 @@ module.exports.getArtistsByLetter = async (req, res) => {
         return catchRes(res, error);
     }
 };
+
 
 module.exports.getArtistSongs = async (req, res) => {
     try {
