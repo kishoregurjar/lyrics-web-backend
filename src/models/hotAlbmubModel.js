@@ -20,11 +20,12 @@
 const mongoose = require('mongoose');
 
 const hotAlbumSchema = new mongoose.Schema({
-    lfid: { type: String, required: true },
+    lfid: { type: String },
     title: { type: String, required: true },
+    image: { type: String },
     artists: [{ type: String, required: true }],
     duration: { type: String },
-    isrcs: { type: String },
+    isrc: { type: String },
     has_lrc: { type: Boolean },
     copyright: { type: String },
     writer: { type: String },

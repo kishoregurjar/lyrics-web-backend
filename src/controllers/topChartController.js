@@ -45,7 +45,6 @@ module.exports.deleteTopChart = async (req, res) => {
         const deletTopChart = await topChartModel.deleteOne(
             { _id: chartId }
         )
-        console.log(deletTopChart)
         if (!deletTopChart) {
             return catchRes(res, { message: "Something went wrong" })
         }

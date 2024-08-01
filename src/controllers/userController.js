@@ -501,7 +501,6 @@ module.exports.updateUserCommentStatus = async (req, res) => {
     comment.deletedAt = status === "disabled" ? Date.now() : null;
 
     let savedComment = await comment.save();
-    // console.log(savedComment);
     return successRes(res, 200, true, "Comment Status Updated.", savedComment);
   } catch (error) {
     console.error("Error Updating Comment Status:", error);

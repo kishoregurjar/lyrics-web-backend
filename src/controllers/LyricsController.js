@@ -28,6 +28,74 @@ async function getAccessToken() {
 }
 
 //by admin
+// module.exports.addHotSong = async (req, res) => {
+//     let { _id } = req.user;
+
+//     const session = await mongoose.startSession();
+//     session.startTransaction();
+
+//     try {
+//         const { isrcKey, status } = req.body;
+
+//         const findAdmin = await Admin.findById(_id).session(session);
+//         if (!findAdmin) {
+//             await session.abortTransaction();
+//             session.endSession();
+//             return successRes(res, 401, false, "Admin Not Found");
+//         }
+//         const userAgent = req.headers['user-agent'] || 'YourAppName/1.0';
+//         const territory = "IN";
+//         const apiKey = process.env.LF_API_KEY;
+//         const url = `https://api.lyricfind.com/lyric.do?apikey=${apiKey}&territory=${territory}&reqtype=default&trackid=isrc:${isrcKey}&output=json&useragent=${encodeURIComponent(userAgent)}`;
+
+//         if (isrcKey == 'not-available') {
+//             return successRes(res, 404, false, "Lyrics Not Found", null);
+//         }
+
+//         const response = await axios.get(url);
+//         const { track, response: apiResponse } = response.data;
+
+//         if (apiResponse.code !== 101) {
+//             await session.abortTransaction();
+//             session.endSession();
+//             return successRes(res, 400, false, "Failed to fetch lyrics");
+//         }
+//         const albumData = {
+//             lfid: track.lfid,
+//             title: track.title,
+//             artists: track.artist.name,
+//             duration: (track.duration),
+//             isrcs: track.isrcs[0],
+//             has_lrc: track.has_lrc,
+//             copyright: track.copyright,
+//             writer: track.writer,
+//         };
+//         let saveResult;
+//         if (status.includes('hotAlbum')) {
+//             const newHotAlbum = new hotAlbmubModel(albumData);
+//             saveResult = await newHotAlbum.save({ session });
+//         }
+//         if (status.includes('topChart')) {
+//             const newTopChart = new topChartModel(albumData);
+//             saveResult = await newTopChart.save({ session });
+//         }
+
+//         if (!saveResult) {
+//             await session.abortTransaction();
+//             session.endSession();
+//             return swrRes(res);
+//         }
+
+//         await session.commitTransaction();
+//         session.endSession();
+//         return successRes(res, 201, true, "Song added successfully", albumData);
+//     } catch (error) {
+//         await session.abortTransaction();
+//         session.endSession();
+//         return catchRes(res, error);
+//     }
+// };
+
 module.exports.addHotSong = async (req, res) => {
     let { _id } = req.user;
 
@@ -37,47 +105,67 @@ module.exports.addHotSong = async (req, res) => {
     try {
         const { isrcKey, status } = req.body;
 
+        // Validate `status`
+        if (!status || (typeof status !== 'string' && !Array.isArray(status))) {
+            await session.abortTransaction();
+            session.endSession();
+            return successRes(res, 400, false, "Invalid status format");
+        }
+
         const findAdmin = await Admin.findById(_id).session(session);
         if (!findAdmin) {
             await session.abortTransaction();
             session.endSession();
             return successRes(res, 401, false, "Admin Not Found");
         }
-        const userAgent = req.headers['user-agent'] || 'YourAppName/1.0';
-        const territory = "IN";
-        const apiKey = process.env.LF_API_KEY;
-        const url = `https://api.lyricfind.com/lyric.do?apikey=${apiKey}&territory=${territory}&reqtype=default&trackid=isrc:${isrcKey}&output=json&useragent=${encodeURIComponent(userAgent)}`;
 
-        if (isrcKey == 'not-available') {
-            return successRes(res, 404, false, "Lyrics Not Found", null);
-        }
-
-        const response = await axios.get(url);
-        const { track, response: apiResponse } = response.data;
-
-        if (apiResponse.code !== 101) {
+        const spotifyToken = await getAccessToken();
+        if (!spotifyToken) {
             await session.abortTransaction();
             session.endSession();
-            return successRes(res, 400, false, "Failed to fetch lyrics");
+            return successRes(res, 500, false, "Failed to obtain Spotify token");
         }
+
+        const url = `https://api.spotify.com/v1/tracks/${isrcKey}`;
+        const response = await axios.get(url, {
+            headers: {
+                'Authorization': `Bearer ${spotifyToken}`
+            }
+        });
+        const track = response.data;
+
         const albumData = {
-            lfid: track.lfid,
-            title: track.title,
-            artists: track.artist.name,
-            duration: (track.duration),
-            isrcs: track.isrcs[0],
-            has_lrc: track.has_lrc,
-            copyright: track.copyright,
-            writer: track.writer,
+            spotifyId: track.id,
+            title: track.name,
+            artists: track.artists.map(artist => artist.name).join(', '),
+            duration: track.duration_ms,
+            isrc: track.external_ids.isrc,
+            album: track.album.name,
+            releaseDate: track.album.release_date,
+            image: track.album.images[0]?.url
         };
+
+        console.log(albumData, "data")
+
         let saveResult;
-        if (status.includes('hotAlbum')) {
-            const newHotAlbum = new hotAlbmubModel(albumData);
-            saveResult = await newHotAlbum.save({ session });
-        }
-        if (status.includes('topChart')) {
-            const newTopChart = new topChartModel(albumData);
-            saveResult = await newTopChart.save({ session });
+        if (Array.isArray(status)) {
+            if (status.includes('hotAlbum')) {
+                const newHotAlbum = new hotAlbmubModel(albumData);
+                saveResult = await newHotAlbum.save({ session });
+            }
+            if (status.includes('topChart')) {
+                const newTopChart = new topChartModel(albumData);
+                saveResult = await newTopChart.save({ session });
+            }
+        } else if (typeof status === 'string') {
+            if (status.includes('hotAlbum')) {
+                const newHotAlbum = new hotAlbmubModel(albumData);
+                saveResult = await newHotAlbum.save({ session });
+            }
+            if (status.includes('topChart')) {
+                const newTopChart = new topChartModel(albumData);
+                saveResult = await newTopChart.save({ session });
+            }
         }
 
         if (!saveResult) {
@@ -90,6 +178,8 @@ module.exports.addHotSong = async (req, res) => {
         session.endSession();
         return successRes(res, 201, true, "Song added successfully", albumData);
     } catch (error) {
+        console.log(error.response)
+        console.error("Error details:", error.response ? error.response.data : error.message);
         await session.abortTransaction();
         session.endSession();
         return catchRes(res, error);
@@ -339,7 +429,6 @@ module.exports.getArtistDetails = async (req, res) => {
         const artistId = req.query.artistId;
 
         const token = await getAccessToken();
-        console.log(token)
 
         const response = await axios.get(`https://api.spotify.com/v1/artists/${artistId}`, {
             headers: {
@@ -348,7 +437,6 @@ module.exports.getArtistDetails = async (req, res) => {
         });
         return successRes(res, 200, true, "ArtistDetails", response?.data)
     } catch (error) {
-        console.log(error.stack)
         return catchRes(res, error);
     }
 }
