@@ -430,16 +430,39 @@ module.exports.getArtistDetails = async (req, res) => {
 
         const token = await getAccessToken();
 
-        const response = await axios.get(`https://api.spotify.com/v1/artists/${artistId}`, {
+        // Fetch artist details
+        const artistResponse = await axios.get(`https://api.spotify.com/v1/artists/${artistId}`, {
             headers: {
                 'Authorization': `Bearer ${token}`
             }
         });
-        return successRes(res, 200, true, "ArtistDetails", response?.data)
+
+        const artistData = artistResponse.data;
+
+        // Fetch artist's top tracks
+        const topTracksResponse = await axios.get(`https://api.spotify.com/v1/artists/${artistId}/top-tracks?market=US`, {
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+
+        const topTracksData = topTracksResponse.data.tracks;
+        const topTracks = topTracksData.map(track => track.name).slice(0, 2);
+
+        const cleanTrackNames = topTracks.map(track => track.replace(/\"/g, ''));
+
+        const description = `${artistData.name}, known professionally as ${artistData.name}, is a(n) ${artistData.genres.join(', ')} artist. They got big off of hits like "${cleanTrackNames[0]}" and "${cleanTrackNames[1]}". They are one of the current highest selling musicians and a big personality in the music industry.`;
+
+        const enrichedArtistData = {
+            ...artistData,
+            description
+        };
+
+        return successRes(res, 200, true, "ArtistDetails", enrichedArtistData);
     } catch (error) {
         return catchRes(res, error);
     }
-}
+};
 
 module.exports.getArtistsByLetter = async (req, res) => {
     try {
