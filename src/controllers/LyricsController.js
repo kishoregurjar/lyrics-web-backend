@@ -679,8 +679,8 @@ module.exports.getLyricsAdmin = async (req, res) => {
         }
 
         let resObj = {};
-
-        if (response?.data?.response?.code === 204) {
+        console.log(response.data, "dataaaaaaaaaa")
+        if (response?.data?.response?.code === 204 || response?.data?.response?.code === 202) {
             return successRes(res, 404, false, "Lyrics Not Found", null);
         } else if (response && response.data && response.data.track) {
             resObj = response.data.track;
