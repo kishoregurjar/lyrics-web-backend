@@ -681,7 +681,7 @@ module.exports.getLyricsAdmin = async (req, res) => {
         let resObj = {};
         console.log(response.data, "dataaaaaaaaaa")
         if (response?.data?.response?.code === 204 || response?.data?.response?.code === 202) {
-            return successRes(res, 404, false, "Lyrics Not Found", null);
+            return successRes(res, 200, false, "Lyrics Not Found", null);
         } else if (response && response.data && response.data.track) {
             resObj = response.data.track;
             return successRes(res, 200, true, "Lyrics Fetched Successfully", resObj);
