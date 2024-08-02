@@ -692,13 +692,13 @@ module.exports.getLyricsAdmin = async (req, res) => {
         const url = `https://api.lyricfind.com/lyric.do?apikey=${apiKey}&territory=${territory}&reqtype=default&trackid=isrc:${isrcKey}&output=json&useragent=${encodeURIComponent(userAgent)}`;
 
         if (isrcKey === 'not-available') {
-            return successRes(res, 404, false, "Lyrics Not Found", null);
+            return successRes(res, 200, false, "Lyrics Not Found", null);
         }
 
         const response = await axios.get(url);
 
         if (response?.data?.response?.code === 206) {
-            return successRes(res, 404, false, "Lyrics Not Found", null);
+            return successRes(res, 200, false, "Lyrics Not Found", null);
         }
 
         let resObj = {};
