@@ -346,15 +346,38 @@ module.exports.searchSAA = async (req, res) => {
 //     }
 // };
 
+const fetchAlbums = async (artistId, limit, offset, accessToken) => {
+    try {
+        const response = await axios.get(`https://api.spotify.com/v1/artists/${artistId}/albums`, {
+            headers: {
+                Authorization: `Bearer ${accessToken}`,
+            },
+            params: {
+                limit: limit,
+                offset: offset
+            }
+        });
+        return response;
+    } catch (error) {
+        if (error.response && error.response.status === 429) {
+            const retryAfter = error.response.headers['retry-after'];
+            await new Promise(resolve => setTimeout(resolve, retryAfter * 1000));
+            return fetchAlbums(artistId, limit, offset, accessToken);
+        }
+        throw error;
+    }
+};
+
 module.exports.artistSong = async (req, res) => {
-    const { artistId, limit = 20, page = 1 } = req.query;
+    const { artistId, page } = req.query;
+    const limit = 20;
 
     if (!artistId) {
-        return successRes(res, 400, false, "Artist ID is required")
+        return successRes(res, 400, false, "Artist ID is required");
     }
 
     const limitValue = parseInt(limit, 10);
-    const pageValue = parseInt(page, 10);
+    const pageValue = page ? parseInt(page, 10) : 1; // Default to page 1 if not provided
 
     if (isNaN(limitValue) || limitValue <= 0) {
         return successRes(res, 400, false, "Invalid limit value");
@@ -369,24 +392,10 @@ module.exports.artistSong = async (req, res) => {
     try {
         const accessToken = await getAccessToken();
         if (!accessToken) {
-            return res
-                .status(500)
-                .json({ success: false, message: "Failed to get access token" });
+            return res.status(500).json({ success: false, message: "Failed to get access token" });
         }
 
-        const albumsResponse = await axios.get(
-            `https://api.spotify.com/v1/artists/${artistId}/albums`,
-            {
-                headers: {
-                    Authorization: `Bearer ${accessToken}`,
-                },
-                params: {
-                    limit: limitValue,
-                    offset: offset
-                }
-            }
-        );
-
+        const albumsResponse = await fetchAlbums(artistId, limitValue, offset, accessToken);
         const albums = albumsResponse.data.items;
         const total = albumsResponse.data.total;
 
@@ -399,7 +408,7 @@ module.exports.artistSong = async (req, res) => {
             totalPages: Math.ceil(total / limitValue)
         });
     } catch (error) {
-        return catchRes(res, error)
+        return catchRes(res, error);
     }
 };
 
