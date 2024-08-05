@@ -756,16 +756,20 @@ module.exports.albumDetails = async (req, res) => {
             return res.status(500).json({ success: false, message: 'Failed to get access token' });
         }
 
-        const album = await fetchAlbum(albumId, accessToken);
+        // const album = await fetchAlbum(albumId, accessToken);
+        spotifyApi.setAccessToken(accessToken);
+
+        const { body } = await spotifyApi.getAlbum(albumId);
+        console.log(body, "data");
 
         return res.status(200).json({
             success: true,
             data: {
-                name: album.name,
-                release_date: album.release_date,
-                images: album.images,
-                description: album.description || 'No description available',
-                tracks: album.tracks.items.map(track => ({
+                name: body.name,
+                release_date: body.release_date,
+                images: body.images,
+                description: body.description || 'No description available',
+                tracks: body.tracks.items.map(track => ({
                     name: track.name,
                     duration: track.duration_ms,
                 })),
