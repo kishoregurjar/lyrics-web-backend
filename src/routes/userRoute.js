@@ -44,6 +44,7 @@ router.get("/album/songs", controller.lyricsController.getAlbumSong); //from spo
 router.get("/artistDetails", controller.lyricsController.getArtistDetails); //from spotify
 router.post("/getArtistsByLetter", controller.lyricsController.getArtistsByLetter); //from spotify
 router.get("/getArtistSongs", controller.lyricsController.getArtistSongs); //from spotify
+router.get("/albumDetails", controller.lyricsController.albumDetails); //from spotify
 router.post("/search-lyricfind", controller.lyricsController.searchLyricsFindSongs); //from lyricsfind
 
 //Hot Album List

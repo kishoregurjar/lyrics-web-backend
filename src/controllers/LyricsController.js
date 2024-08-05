@@ -5,10 +5,11 @@ const axios = require("axios");
 const hotAlbmubModel = require("../models/hotAlbmubModel");
 const topChartModel = require('../models/topChartModel')
 const xml2js = require("xml2js");
+const SpotifyWebApi = require('spotify-web-api-node');
 
 // access token for spotify
+const { SPOTIFY_CLIENT_ID, SPOTIFY_CLIENT_SECRET } = process.env;
 async function getAccessToken() {
-    const { SPOTIFY_CLIENT_ID, SPOTIFY_CLIENT_SECRET } = process.env;
     const token = Buffer.from(
         `${SPOTIFY_CLIENT_ID}:${SPOTIFY_CLIENT_SECRET}`
     ).toString("base64");
@@ -722,5 +723,55 @@ module.exports.getLyricsAdmin = async (req, res) => {
         }
     } catch (error) {
         return catchRes(res, error)
+    }
+};
+
+const spotifyApi = new SpotifyWebApi({
+    clientId: SPOTIFY_CLIENT_ID,
+    clientSecret: SPOTIFY_CLIENT_SECRET,
+});
+
+
+const fetchAlbum = async (albumId, accessToken) => {
+    try {
+        spotifyApi.setAccessToken(accessToken);
+        const data = await spotifyApi.getAlbum(albumId);
+        return data.body;
+    } catch (err) {
+        console.error('Error fetching album details:', err);
+        throw new Error('Failed to fetch album details');
+    }
+};
+
+module.exports.albumDetails = async (req, res) => {
+    const { albumId } = req.query;
+
+    if (!albumId) {
+        return res.status(400).json({ success: false, message: 'Album ID is required' });
+    }
+
+    try {
+        const accessToken = await getAccessToken();
+        if (!accessToken) {
+            return res.status(500).json({ success: false, message: 'Failed to get access token' });
+        }
+
+        const album = await fetchAlbum(albumId, accessToken);
+
+        return res.status(200).json({
+            success: true,
+            data: {
+                name: album.name,
+                release_date: album.release_date,
+                images: album.images,
+                description: album.description || 'No description available',
+                tracks: album.tracks.items.map(track => ({
+                    name: track.name,
+                    duration: track.duration_ms,
+                })),
+            },
+        });
+    } catch (error) {
+        return res.status(500).json({ success: false, message: error.message });
     }
 };
