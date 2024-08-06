@@ -13,18 +13,24 @@ const indexRoute = require("./src/routes/indexRoute");
 const { winstonLogMiddleware } = require("./src/middlewares/loggerMiddleware");
 
 let PORT = process.env.APP_PORT || 3007;
-// const limiter = rateLimit({
-//   windowMs: 15 * 60 * 1000,
-//   max: 100,
-//   message: "Too many requests from this IP, please try again after 15 minutes",
-// });
-// app.use(limiter);
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 100,
+  message: "Too many requests from this IP, please try again after 15 minutes",
+});
+app.use(limiter);
 app.use(compression());
 
 app.use(express.static("uploads"));
 app.use(express.static("src/uploads"));
 app.use(helmet());
-app.use(cors());
+const corsOptions = {
+  origin: 'https://lyricsweb.com',
+  // origin: 'http://localhost:3000',
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+};
+
+app.use(cors(corsOptions));
 app.use(express.json());
 app.use(
   express.urlencoded({
