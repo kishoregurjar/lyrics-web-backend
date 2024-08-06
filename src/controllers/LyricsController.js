@@ -428,6 +428,7 @@ module.exports.getAlbumSong = async (req, res) => {
             })
             .catch((error) => {
                 console.log(error.response);
+                return successRes(res, 500, false, "Something went wrong")
             });
     } catch (error) {
         return catchRes(res, error)
@@ -730,17 +731,6 @@ const spotifyApi = new SpotifyWebApi({
     clientSecret: SPOTIFY_CLIENT_SECRET,
 });
 
-
-const fetchAlbum = async (albumId, accessToken) => {
-    try {
-        spotifyApi.setAccessToken(accessToken);
-        const data = await spotifyApi.getAlbum(albumId);
-        return data.body;
-    } catch (err) {
-        console.error('Error fetching album details:', err);
-        throw new Error('Failed to fetch album details');
-    }
-};
 
 module.exports.albumDetails = async (req, res) => {
     const { albumId } = req.query;
