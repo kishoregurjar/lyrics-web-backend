@@ -402,6 +402,7 @@ module.exports.artistSong = async (req, res) => {
 
         return res.status(200).json({
             success: true,
+            status: 200,
             data: albums,
             total,
             limit: limitValue,
