@@ -428,7 +428,7 @@ module.exports.getAlbumSong = async (req, res) => {
             })
             .catch((error) => {
                 console.log(error.response);
-                return successRes(res, 500, false, "Something went wrong")
+                return successRes(res, 500, false, error.message, [])
             });
     } catch (error) {
         return catchRes(res, error)
