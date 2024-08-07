@@ -285,6 +285,27 @@ module.exports.searchLyricsFindSongs = async (req, res) => {
     }
 }
 
+const { SPOTIFY_CLIENT_ID, SPOTIFY_CLIENT_SECRET } = process.env;
+
+async function getAccessToken() {
+    const token = Buffer.from(
+        `${SPOTIFY_CLIENT_ID}:${SPOTIFY_CLIENT_SECRET}`
+    ).toString("base64");
+
+    const response = await axios.post(
+        "https://accounts.spotify.com/api/token",
+        "grant_type=client_credentials",
+        {
+            headers: {
+                Authorization: `Basic ${token}`,
+                "Content-Type": "application/x-www-form-urlencoded",
+            },
+        }
+    );
+
+    return response.data.access_token;
+}
+
 const SPOTIFY_API_URL = 'https://api.spotify.com/v1';
 
 async function getISRCFromSpotify(trackId) {
