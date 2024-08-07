@@ -165,7 +165,7 @@ router.get(
   controller.lyricsController.getHotSongList
 );
 
-router.get("/search-song", controller.lyricsController.searchSong);
+router.get("/search-song", controller.spotifyController.searchSong);
 
 router.delete(
   "/delete-song",
@@ -206,14 +206,10 @@ router.delete(
 );
 
 /* Spotify Powered APIs */
-router.post("/search-songs", controller.spotifyController.searchSongSpotify);
-router.get(
-  "/artist/song-search",
-  controller.spotifyController.artistSongSpotify
-);
-router.get("/album/song-search", controller.spotifyController.albumSongSpotify);
-router.get("/album/songs", controller.lyricsController.getAlbumSong); //from spotify
-router.get("/artist/song", controller.lyricsController.artistSong); //from spotify
+// router.post("/search-songs", controller.spotifyController.searchSongSpotify);
+
+router.get("/album/songs", controller.spotifyController.getAlbumSong); //from spotify
+router.get("/artist/song", controller.spotifyController.artistAlbums); //from spotify
 
 
 

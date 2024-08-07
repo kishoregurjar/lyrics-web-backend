@@ -38,13 +38,13 @@ router.get("/get-news-list", controller.adminController.getNewsList);
 router.get("/get-news", controller.adminController.getNewsById);
 
 // ====================== Search Everything ====================//
-router.post("/search", controller.lyricsController.searchSAA); //from spotify
-router.get("/artist/song", controller.lyricsController.artistSong); //from spotify
-router.get("/album/songs", controller.lyricsController.getAlbumSong); //from spotify
-router.get("/artistDetails", controller.lyricsController.getArtistDetails); //from spotify
-router.post("/getArtistsByLetter", controller.lyricsController.getArtistsByLetter); //from spotify
-router.get("/getArtistSongs", controller.lyricsController.getArtistSongs); //from spotify
-router.get("/albumDetails", controller.lyricsController.albumDetails); //from spotify
+router.post("/search", controller.spotifyController.searchSAA); //from spotify
+router.get("/artist/song", controller.spotifyController.artistAlbums); //from spotify
+router.get("/album/songs", controller.spotifyController.getAlbumSong); //from spotify
+router.get("/artistDetails", controller.spotifyController.getArtistDetails); //from spotify
+router.post("/getArtistsByLetter", controller.spotifyController.getArtistsByLetter); //from spotify
+router.get("/getArtistSongs", controller.spotifyController.getArtistSongs); //from spotify
+router.get("/albumDetails", controller.spotifyController.albumDetails); //from spotify
 router.post("/search-lyricfind", controller.lyricsController.searchLyricsFindSongs); //from lyricsfind
 
 //Hot Album List
