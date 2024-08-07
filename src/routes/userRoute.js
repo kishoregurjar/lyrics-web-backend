@@ -38,6 +38,7 @@ router.get("/get-news-list", controller.adminController.getNewsList);
 router.get("/get-news", controller.adminController.getNewsById);
 
 // ====================== Search Everything ====================//
+router.get('/all-spot', controller.spotifyController.searchPageAPI)
 router.post("/search", controller.spotifyController.searchSAA); //from spotify
 router.get("/artist/song", controller.spotifyController.artistAlbums); //from spotify
 router.get("/album/songs", controller.spotifyController.getAlbumSong); //from spotify

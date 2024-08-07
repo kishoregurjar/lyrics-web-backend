@@ -427,6 +427,37 @@ module.exports.albumDetails = async (req, res) => {
   }
 };
 
+module.exports.searchPageAPI = async (req, res) => {
+  try {
+    let { query } = req.query;
+
+    if (!query) {
+      return successRes(res, 400, false, "Query Parameter Required");
+    }
+
+    const token = await getAccessToken();
+    const searchUrl = `https://api.spotify.com/v1/search`;
+    const headers = {
+      Authorization: `Bearer ${token}`,
+    };
+
+    const params = {
+      q: query,
+      type: 'artist,album,track',
+      limit: 10,
+    };
+
+    const response = await axios.get(searchUrl, { headers, params });
+
+    const artists = response.data.artists.items;
+    const albums = response.data.albums.items;
+    const tracks = response.data.tracks.items;
+    return successRes(res, 200, true, "All Data", { artists, albums, tracks })
+  } catch (error) {
+    return catchRes(res, error);
+  }
+};
+
 /**
  const fetchAlbums = async (artistId, limit, offset, accessToken) => {
   try {
