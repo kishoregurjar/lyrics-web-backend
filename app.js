@@ -24,13 +24,13 @@ app.use(compression());
 app.use(express.static("uploads"));
 app.use(express.static("src/uploads"));
 app.use(helmet());
-const corsOptions = {
-  origin: 'https://lyricsweb.com',
-  // origin: 'http://localhost:3000',
-  methods: ['GET', 'POST', 'PUT', 'DELETE'],
-};
+// const corsOptions = {
+//   origin: 'https://lyricsweb.com',
+//   // origin: 'http://localhost:3000',
+//   methods: ['GET', 'POST', 'PUT', 'DELETE'],
+// };
 
-app.use(cors(corsOptions));
+app.use(cors());
 app.use(express.json());
 app.use(
   express.urlencoded({
