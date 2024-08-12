@@ -5,6 +5,7 @@ const axios = require("axios");
 const hotAlbmubModel = require("../models/hotAlbmubModel");
 const topChartModel = require('../models/topChartModel')
 const xml2js = require("xml2js");
+const ArtistBiblio = require('../models/artistBiblio')
 
 
 //by admin
@@ -130,7 +131,6 @@ module.exports.addHotSong = async (req, res) => {
             image: track.album.images[0]?.url
         };
 
-        console.log(albumData, "data")
 
         let saveResult;
         if (Array.isArray(status)) {
@@ -163,7 +163,6 @@ module.exports.addHotSong = async (req, res) => {
         session.endSession();
         return successRes(res, 201, true, "Song added successfully", albumData);
     } catch (error) {
-        console.log(error.response)
         console.error("Error details:", error.response ? error.response.data : error.message);
         await session.abortTransaction();
         session.endSession();
@@ -361,3 +360,19 @@ module.exports.getLyricsAdmin = async (req, res) => {
     }
 };
 
+module.exports.artistDetailsByDB = async (req, res) => {
+    try {
+        let { artistId } = req.query;
+        if (!artistId) {
+            return successRes(res, 400, false, "Please Provide Artist id")
+        }
+        let findArtistDetails = await ArtistBiblio.find({ artistId: artistId })
+        if (!findArtistDetails) {
+            return successRes(res, 200, false, "No artist details", []);
+        }
+        return successRes(res, 200, true, "Artist Details Fetched Successfully", findArtistDetails)
+
+    } catch (error) {
+        return catchRes(res, error)
+    }
+}

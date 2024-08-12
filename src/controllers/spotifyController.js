@@ -3,45 +3,127 @@ const { catchRes, successRes, swrRes } = require("../utils/response");
 const axios = require("axios");
 const SpotifyWebApi = require('spotify-web-api-node');
 const NodeCache = require('node-cache');
+const ArtistBiblio = require("../models/artistBiblio");
+const csv = require('csv-parser');
+const fs = require('fs');
+const path = require('path');
+const { default: mongoose } = require("mongoose");
+const cache = new NodeCache({ stdTTL: 3600 });
+const myCache = new NodeCache({ stdTTL: 3600 }); // Cache data for 1 hour
+const MAX_RETRIES = 5;
 
 /** ----- Generate spotify token ----- */
 
 const { SPOTIFY_CLIENT_ID, SPOTIFY_CLIENT_SECRET } = process.env;
 
-async function getAccessToken() {
-  const token = Buffer.from(
-    `${SPOTIFY_CLIENT_ID}:${SPOTIFY_CLIENT_SECRET}`
-  ).toString("base64");
+async function getAccessToken(retryCount = 0) {
+  try {
+    const token = Buffer.from(
+      `${SPOTIFY_CLIENT_ID}:${SPOTIFY_CLIENT_SECRET}`
+    ).toString("base64");
 
-  const response = await axios.post(
-    "https://accounts.spotify.com/api/token",
-    "grant_type=client_credentials",
-    {
-      headers: {
-        Authorization: `Basic ${token}`,
-        "Content-Type": "application/x-www-form-urlencoded",
-      },
+    const response = await axios.post(
+      "https://accounts.spotify.com/api/token",
+      "grant_type=client_credentials",
+      {
+        headers: {
+          Authorization: `Basic ${token}`,
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+      }
+    );
+
+    return response.data.access_token;
+  } catch (error) {
+    if (error.response && error.response.status === 503 && retryCount < 3) {
+      console.log(`Retrying... Attempt ${retryCount + 1}`);
+      await new Promise(resolve => setTimeout(resolve, 1000 * Math.pow(2, retryCount))); // Exponential backoff
+      return getAccessToken(retryCount + 1);
+    } else {
+      console.error('Error fetching access token:', error.message);
+      throw error;
     }
-  );
-
-  return response.data.access_token;
+  }
 }
 
+// async function getAccessToken() {
+//   try {
+//     const token = Buffer.from(
+//       `${SPOTIFY_CLIENT_ID}:${SPOTIFY_CLIENT_SECRET}`
+//     ).toString("base64");
+
+//     const response = await axios.post(
+//       "https://accounts.spotify.com/api/token",
+//       "grant_type=client_credentials",
+//       {
+//         headers: {
+//           Authorization: `Basic ${token}`,
+//           "Content-Type": "application/x-www-form-urlencoded",
+//         },
+//       }
+//     );
+//     return response.data.access_token;
+//   } catch (error) {
+//     console.log(error, "error")
+//     if (error.response) {
+//       console.error(`Error: ${error.response.status} - ${error.response.statusText}`);
+//       console.error(error.response.data);
+//       if (error.response.status === 503) {
+//         console.error("Spotify API is unavailable. Please try again later.");
+//       }
+//     } else if (error.request) {
+//       console.error("No response received from Spotify API.");
+//       console.error(error.request);
+//     } else {
+//       console.error("Error in making the request to Spotify API.");
+//       console.error(error.message);
+//     }
+//   }
+// }
+
+// async function getAccessToken() {
+//   const token = Buffer.from(
+//     `${SPOTIFY_CLIENT_ID}:${SPOTIFY_CLIENT_SECRET}`
+//   ).toString("base64");
+
+//   const response = await axios.post(
+//     "https://accounts.spotify.com/api/token",
+//     "grant_type=client_credentials",
+//     {
+//       headers: {
+//         Authorization: `Basic ${token}`,
+//         "Content-Type": "application/x-www-form-urlencoded",
+//       },
+//     }
+//   );
+
+//   return response.data.access_token;
+// }
+
 /** ----- search for track,artist and albums from spotify ----- */
+/**with Cache  */
+
 module.exports.searchSAA = async (req, res) => {
   const { type, query, page = 1, limit = 10 } = req.body;
 
-  let offset = limit * page - limit
+  let offset = limit * page - limit;
 
   const validTypes = ["artist", "track", "album"];
   if (!validTypes.includes(type)) {
-    return successRes(res, 400, false, "Invalid Search Type", [])
+    return successRes(res, 400, false, "Invalid Search Type", []);
   }
 
   try {
+    const cacheKey = `${type}:${query}:${page}:${limit}`;
+    const cachedData = cache.get(cacheKey);
+
+    if (cachedData) {
+      return successRes(res, 200, true, "Search List (Cached)", cachedData);
+    }
+
     const accessToken = await getAccessToken();
     if (!accessToken) {
-      return successRes(res, 500, false, "Failed to get access token", [])
+      return successRes(res, 500, false, "Failed to get access token", []);
     }
 
     const searchResponse = await axios.get(
@@ -54,18 +136,21 @@ module.exports.searchSAA = async (req, res) => {
           q: query,
           type: type,
           limit: limit,
-          offset: offset
+          offset: offset,
         },
       }
     );
 
-    return successRes(res, 200, true, "Search List", searchResponse.data)
+    const searchData = searchResponse.data;
+
+    cache.set(cacheKey, searchData);
+
+    return successRes(res, 200, true, "Search List", searchData);
   } catch (error) {
-    return catchRes(res, error)
+    return catchRes(res, error);
   }
 };
 
-//for admin panel from spotify
 module.exports.searchSong = async (req, res) => {
   try {
     const { query } = req.query;
@@ -103,19 +188,17 @@ module.exports.searchSong = async (req, res) => {
   }
 };
 
-const myCache = new NodeCache({ stdTTL: 3600 }); // Cache data for 1 hour
-const MAX_RETRIES = 5;
-
 const makeRequestWithRetries = async (url, headers, retries = MAX_RETRIES, backoff = 1000) => {
   try {
     const response = await axios.get(url, { headers });
     return response.data;
   } catch (error) {
     if (error.response && error.response.status === 429 && retries > 0) {
-      const retryAfter = error.response.headers['retry-after'] ? error.response.headers['retry-after'] * 1000 : backoff;
-      console.log(`Rate limit exceeded. Retrying after ${retryAfter / 1000} seconds.`);
-      await new Promise((resolve) => setTimeout(resolve, retryAfter));
-      return makeRequestWithRetries(url, headers, retries - 1, backoff * 2); // Exponential backoff
+      const retryAfter = error.response.headers['retry-after']
+        ? error.response.headers['retry-after'] * 1000
+        : backoff;
+      console.log(`Rate limit exceeded. Retry after ${retryAfter / 1000} seconds.`);
+      return { retryAfter };  // Return the retryAfter time instead of retrying
     } else {
       throw error;
     }
@@ -133,6 +216,7 @@ const fetchArtistAlbums = async (artistId, limit, offset, accessToken) => {
   return makeRequestWithRetries(url, headers);
 };
 
+/**with Cache  */
 module.exports.artistAlbums = async (req, res) => {
   const { artistId, page } = req.query;
   const limit = 20;
@@ -155,9 +239,7 @@ module.exports.artistAlbums = async (req, res) => {
   const cacheKey = `artist_${artistId}_page_${pageValue}`;
 
   const cachedData = myCache.get(cacheKey);
-  console.log("nothing ", cachedData)
   if (cachedData) {
-    console.log(cachedData, "data")
     return successRes(res, 200, true, "Artist Albums (from cache)", cachedData.albums);
   }
 
@@ -188,6 +270,7 @@ module.exports.artistAlbums = async (req, res) => {
   }
 };
 
+/**with Cache  */
 module.exports.getAlbumSong = async (req, res) => {
   try {
     const { albumId } = req.query;
@@ -210,24 +293,30 @@ module.exports.getAlbumSong = async (req, res) => {
 
     return successRes(res, 200, true, "Album Songs", data.items);
   } catch (error) {
-    console.log(error.response || error);
     return successRes(res, 500, false, error.message, []);
   }
 };
 
+/**with Cache  */
 
 module.exports.getArtistDetails = async (req, res) => {
   try {
     const artistId = req.query.artistId;
 
-    const token = await getAccessToken();
+    const cachedData = cache.get(artistId);
+    if (cachedData) {
+      return successRes(res, 200, true, "ArtistDetails (Cached)", cachedData);
+    }
 
+    const token = await getAccessToken();
+    if (!token) {
+      return successRes(res, 404, false, "Unable to get Spotify access token");
+    }
     const artistResponse = await axios.get(`https://api.spotify.com/v1/artists/${artistId}`, {
       headers: {
         'Authorization': `Bearer ${token}`
       }
     });
-
     const artistData = artistResponse.data;
 
     const topTracksResponse = await axios.get(`https://api.spotify.com/v1/artists/${artistId}/top-tracks?market=US`, {
@@ -235,7 +324,6 @@ module.exports.getArtistDetails = async (req, res) => {
         'Authorization': `Bearer ${token}`
       }
     });
-
     const topTracksData = topTracksResponse.data.tracks;
     const topTracks = topTracksData.map(track => track.name).slice(0, 2);
 
@@ -247,6 +335,8 @@ module.exports.getArtistDetails = async (req, res) => {
       ...artistData,
       description
     };
+
+    cache.set(artistId, enrichedArtistData);
 
     return successRes(res, 200, true, "ArtistDetails", enrichedArtistData);
   } catch (error) {
@@ -407,7 +497,6 @@ module.exports.albumDetails = async (req, res) => {
     spotifyApi.setAccessToken(accessToken);
 
     const { body } = await spotifyApi.getAlbum(albumId);
-    console.log(body, "data");
 
     return res.status(200).json({
       success: true,
@@ -436,6 +525,9 @@ module.exports.searchPageAPI = async (req, res) => {
     }
 
     const token = await getAccessToken();
+    if (!token) {
+      return successRes(res, 500, false, "Failed to get access token", { artists: [], albums: [], tracks: [] })
+    }
     const searchUrl = `https://api.spotify.com/v1/search`;
     const headers = {
       Authorization: `Bearer ${token}`,
@@ -449,14 +541,62 @@ module.exports.searchPageAPI = async (req, res) => {
 
     const response = await axios.get(searchUrl, { headers, params });
 
-    const artists = response.data.artists.items;
-    const albums = response.data.albums.items;
-    const tracks = response.data.tracks.items;
+    const artists = response?.data?.artists?.items;
+    const albums = response?.data?.albums?.items;
+    const tracks = response?.data?.tracks?.items;
     return successRes(res, 200, true, "All Data", { artists, albums, tracks })
   } catch (error) {
     return catchRes(res, error);
   }
 };
+
+module.exports.uploadArtistDetails = async (req, res) => {
+  try {
+    const file = req.file;
+    const artistId = req.body.artistId; // Get artistId from request body
+
+    if (!file || !artistId) {
+      return res.status(400).json({ message: 'No file or artistId provided' });
+    }
+
+    const results = [];
+
+    fs.createReadStream(file.path)
+      .pipe(csv())
+      .on('data', (row) => {
+        results.push(row);
+      })
+      .on('end', async () => {
+        try {
+          for (const row of results) {
+            if (!row.Artist || !row.bibliography) {
+              throw new Error('CSV structure is invalid');
+            }
+
+            const artistBiblio = new ArtistBiblio({
+              _id: new mongoose.Types.ObjectId(),
+              Artist: row.Artist,
+              bibliography: row.bibliography,
+              artistId: artistId
+            });
+
+            await artistBiblio.save();
+          }
+
+          return successRes(res, 200, true, "CSV processed and Saved Data successfully");
+        } catch (error) {
+          console.error('Error processing CSV data:', error);
+          return catchRes(res, error)
+        }
+      })
+      .on('error', (error) => {
+        return catchRes(res, error)
+      });
+
+  } catch (error) {
+    return catchRes(res, error)
+  }
+}
 
 /**
  const fetchAlbums = async (artistId, limit, offset, accessToken) => {

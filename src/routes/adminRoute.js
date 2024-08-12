@@ -18,6 +18,7 @@ const {
   uploadTestimonialAvatar,
   uploadNewsAvatar,
   uploadCarouselImages,
+  uploadArtistCsvFile,
 } = require("../utils/multer");
 const { uploadProfile, uploadCarousel } = require("../utils/multerConfig");
 
@@ -210,6 +211,7 @@ router.delete(
 
 router.get("/album/songs", controller.spotifyController.getAlbumSong); //from spotify
 router.get("/artist/song", controller.spotifyController.artistAlbums); //from spotify
+router.post('/upload-artist-csv-file', uploadArtistCsvFile, controller.spotifyController.uploadArtistDetails)
 
 
 

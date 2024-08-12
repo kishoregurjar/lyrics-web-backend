@@ -140,5 +140,10 @@ module.exports.uploadUserAvatar = uploadSingleFile("image", {
   folder: "src/uploads/user_profile_pictures",
 });
 
+module.exports.uploadArtistCsvFile = uploadSingleFile("file", {
+  fileTypes: /csv/,
+  folder: "src/uploads/user_profile_pictures",
+});
+
 module.exports.uploadSingleFile = uploadSingleFile;
 module.exports.uploadMultipleFiles = uploadMultipleFiles;
