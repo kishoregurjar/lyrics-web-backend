@@ -43,6 +43,7 @@ router.get('/artist-biblio', controller.lyricsController.artistDetailsByDB)
 router.post("/search", controller.spotifyController.searchSAA); //from spotify
 router.get("/artist/song", controller.spotifyController.artistAlbums); //from spotify
 router.get("/album/songs", controller.spotifyController.getAlbumSong); //from spotify
+router.get("/songs-of-artist", controller.spotifyController.songByArtist); //from spotify
 router.get("/artistDetails", controller.spotifyController.getArtistDetails); //from spotify
 router.post("/getArtistsByLetter", controller.spotifyController.getArtistsByLetter); //from spotify
 router.get("/getArtistSongs", controller.spotifyController.getArtistSongs); //from spotify

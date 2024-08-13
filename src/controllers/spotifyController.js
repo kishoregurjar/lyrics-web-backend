@@ -675,6 +675,68 @@ module.exports.uploadArtistDetails = async (req, res) => {
   }
 }
 
+const SONG_LIMIT = 80;
+
+module.exports.songByArtist = async (req, res) => {
+  const artistId = req.query.artistId;
+
+  if (!artistId) {
+    return res.status(400).json({ error: 'Artist ID is required' });
+  }
+
+  try {
+    const token = await getAccessToken();
+    const albumsResponse = await axios.get(`https://api.spotify.com/v1/artists/${artistId}/albums`, {
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    });
+
+    const albumIds = albumsResponse.data.items.map(album => album.id);
+
+    let tracks = [];
+    let allTracks = [];
+    let offset = 0;
+
+    for (const albumId of albumIds) {
+      let hasMoreTracks = true;
+
+      while (hasMoreTracks && tracks.length < SONG_LIMIT) {
+        const tracksResponse = await axios.get(`https://api.spotify.com/v1/albums/${albumId}/tracks`, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          },
+          params: {
+            offset: offset,
+            limit: 50
+          }
+        });
+
+        tracks = tracksResponse.data.items;
+        allTracks = allTracks.concat(tracks);
+
+        if (allTracks.length >= SONG_LIMIT) {
+          allTracks = allTracks.slice(0, SONG_LIMIT);
+          hasMoreTracks = false;
+        } else if (tracksResponse.data.next) {
+          offset += 50;
+        } else {
+          hasMoreTracks = false;
+        }
+      }
+
+      if (allTracks.length >= SONG_LIMIT) break;
+    }
+
+    allTracks.sort((a, b) => a.name.localeCompare(b.name));
+
+    res.json(allTracks);
+  } catch (error) {
+    console.error('Error fetching songs by artist:', error);
+    res.status(500).json({ error: 'Failed to fetch songs' });
+  }
+};
+
 /**
  const fetchAlbums = async (artistId, limit, offset, accessToken) => {
   try {
