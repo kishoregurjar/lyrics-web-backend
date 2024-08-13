@@ -559,6 +559,11 @@ module.exports.uploadArtistDetails = async (req, res) => {
       return res.status(400).json({ message: 'No file or artistId provided' });
     }
 
+    const response = await ArtistBiblio.findOne({ artistId: artistId })
+    if (response) {
+      return successRes(res, 409, false, "Artist Details Already Addeds")
+    }
+
     const results = [];
 
     fs.createReadStream(file.path)
