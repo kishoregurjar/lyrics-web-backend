@@ -681,7 +681,7 @@ module.exports.songByArtist = async (req, res) => {
   const artistId = req.query.artistId;
 
   if (!artistId) {
-    return res.status(400).json({ error: 'Artist ID is required' });
+    return successRes(res, 400, false, "Please Provide Artist ID");
   }
 
   try {
@@ -730,10 +730,9 @@ module.exports.songByArtist = async (req, res) => {
 
     allTracks.sort((a, b) => a.name.localeCompare(b.name));
 
-    res.json(allTracks);
+    return successRes(res, 200, true, "Songs Fetched successfully", allTracks || [])
   } catch (error) {
-    console.error('Error fetching songs by artist:', error);
-    res.status(500).json({ error: 'Failed to fetch songs' });
+    return catchRes(res, error)
   }
 };
 
