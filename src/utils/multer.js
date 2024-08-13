@@ -115,34 +115,34 @@ const uploadMultipleFiles = (fieldName, maxCount, options) => {
 module.exports.uploadAdminAvatar = uploadSingleFile("image", {
   fileTypes: /jpeg|jpg|png/,
   fileSize: 3000000,
-  folder: "src/uploads/admin_profile_pictures",
+  folder: "uploads/admin_profile_pictures",
 });
 
 module.exports.uploadTestimonialAvatar = uploadSingleFile("image", {
   fileTypes: /jpeg|jpg|png/,
-  folder: "src/uploads/testimonial_pictures",
+  folder: "uploads/testimonial_pictures",
 });
 
 module.exports.uploadNewsAvatar = uploadSingleFile("image", {
   fileTypes: /jpeg|jpg|png/,
-  folder: "src/uploads/news_pictures",
+  folder: "uploads/news_pictures",
 });
 
 module.exports.uploadCarouselImages = uploadMultipleFiles("images", 5, {
   fileTypes: /jpeg|jpg|png/,
   fileSize: 3000000,
-  folder: "src/uploads/carousel_pictures",
+  folder: "uploads/carousel_pictures",
 });
 
 /* User Section */
 module.exports.uploadUserAvatar = uploadSingleFile("image", {
   fileTypes: /jpeg|jpg|png/,
-  folder: "src/uploads/user_profile_pictures",
+  folder: "uploads/user_profile_pictures",
 });
 
 module.exports.uploadArtistCsvFile = uploadSingleFile("file", {
   fileTypes: /csv/,
-  folder: "src/uploads/artist_csv_file",
+  folder: "uploads/artist_csv_file",
 });
 
 module.exports.uploadSingleFile = uploadSingleFile;
