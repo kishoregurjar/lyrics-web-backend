@@ -227,6 +227,7 @@ module.exports.artistAlbums = async (req, res) => {
 
   const limitValue = parseInt(limit, 10);
   const pageValue = page ? parseInt(page, 10) : 1;
+
   if (isNaN(limitValue) || limitValue <= 0) {
     return successRes(res, 400, false, "Invalid limit value");
   }
@@ -240,7 +241,17 @@ module.exports.artistAlbums = async (req, res) => {
 
   const cachedData = myCache.get(cacheKey);
   if (cachedData) {
-    return successRes(res, 200, true, "Artist Albums (from cache)", cachedData.albums);
+    // Return all cached data, including pagination info
+    return res.status(200).json({
+      success: true,
+      status: 200,
+      data: cachedData.albums,
+      total: cachedData.total,
+      limit: cachedData.limit,
+      page: cachedData.page,
+      totalPages: cachedData.totalPages,
+      message: "Artist Albums (from cache)"
+    });
   }
 
   try {
@@ -253,7 +264,14 @@ module.exports.artistAlbums = async (req, res) => {
     const albums = albumsResponse.items;
     const total = albumsResponse.total;
 
-    myCache.set(cacheKey, { albums, total });
+    // Store all relevant data in the cache, including pagination info
+    myCache.set(cacheKey, {
+      albums,
+      total,
+      limit: limitValue,
+      page: pageValue,
+      totalPages: Math.ceil(total / limitValue)
+    });
 
     return res.status(200).json({
       success: true,
@@ -269,6 +287,60 @@ module.exports.artistAlbums = async (req, res) => {
     return catchRes(res, error);
   }
 };
+
+
+// module.exports.artistAlbums = async (req, res) => {
+//   const { artistId, page } = req.query;
+//   const limit = 20;
+
+//   if (!artistId) {
+//     return successRes(res, 400, false, "Artist ID is required");
+//   }
+
+//   const limitValue = parseInt(limit, 10);
+//   const pageValue = page ? parseInt(page, 10) : 1;
+//   if (isNaN(limitValue) || limitValue <= 0) {
+//     return successRes(res, 400, false, "Invalid limit value");
+//   }
+
+//   if (isNaN(pageValue) || pageValue <= 0) {
+//     return successRes(res, 400, false, "Invalid page value");
+//   }
+
+//   const offset = (pageValue - 1) * limitValue;
+//   const cacheKey = `artist_${artistId}_page_${pageValue}`;
+
+//   const cachedData = myCache.get(cacheKey);
+//   if (cachedData) {
+//     return successRes(res, 200, true, "Artist Albums (from cache)", cachedData.albums);
+//   }
+
+//   try {
+//     const accessToken = await getAccessToken();
+//     if (!accessToken) {
+//       return res.status(500).json({ success: false, message: "Failed to get access token" });
+//     }
+
+//     const albumsResponse = await fetchArtistAlbums(artistId, limitValue, offset, accessToken);
+//     const albums = albumsResponse.items;
+//     const total = albumsResponse.total;
+
+//     myCache.set(cacheKey, { albums, total });
+
+//     return res.status(200).json({
+//       success: true,
+//       status: 200,
+//       data: albums,
+//       total,
+//       limit: limitValue,
+//       page: pageValue,
+//       totalPages: Math.ceil(total / limitValue),
+//       message: "Artist Albums Data"
+//     });
+//   } catch (error) {
+//     return catchRes(res, error);
+//   }
+// };
 
 /**with Cache  */
 module.exports.getAlbumSong = async (req, res) => {
