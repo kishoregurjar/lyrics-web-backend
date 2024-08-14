@@ -60,6 +60,16 @@ const createMulter = (options = {}) => {
     "image/jpeg": "jpg",
     "image/png": "png",
     "image/gif": "gif",
+    "application/pdf": "pdf",
+    "application/msword": "doc",
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document": "docx",
+    "text/plain": "txt",
+    "application/vnd.ms-excel": "xls",
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": "xlsx",
+    "text/csv": "csv",
+    "application/json": "json",
+    "application/zip": "zip",
+    "application/x-rar-compressed": "rar",
     // Add other mime types if needed
   };
 
@@ -69,9 +79,8 @@ const createMulter = (options = {}) => {
     const mimetype = fileTypes.test(file.mimetype);
 
     if (mimetype) {
-      const extname = mimeToExt[file.mimetype]; // Get the extension from mime type
+      const extname = mimeToExt[file.mimetype];
       if (extname) {
-        // Optionally, rename the file to include the correct extension
         file.originalname = `${file.originalname}.${extname}`;
         return cb(null, true);
       } else {
