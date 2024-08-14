@@ -68,6 +68,9 @@ const userEditSchema = Joi.object({
       "string.empty": "Mobile number is required",
       "string.pattern.base": "Mobile number must be a 10-digit number",
     }),
+  avatar: Joi.string().allow("", null).optional().messages({
+    "string.empty": "Avatar cannot be an empty string",
+  }),
 });
 
 const forgetPasswordSchema = Joi.object({
