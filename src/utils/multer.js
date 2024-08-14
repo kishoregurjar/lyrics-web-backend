@@ -5,6 +5,7 @@ const { successRes } = require("./response");
 
 // Utility to create multer configuration
 const createMulter = (options = {}) => {
+  // console.log(options, "options")
   const {
     folder = "uploads/miscellaneous", // default folder
     fileSize = 10000000, // default file size 10MB
@@ -34,14 +35,49 @@ const createMulter = (options = {}) => {
   });
 
   // Check file type
+  // const checkFileType = (file, cb) => {
+  //   console.log(file, "file")
+  //   const extname = fileTypes.test(
+  //     path.extname(file.originalname).toLowerCase()
+  //   );
+  //   const mimetype = fileTypes.test(file.mimetype);
+
+  //   if (mimetype && extname) {
+  //     return cb(null, true);
+  //   } else {
+  //     const allowedExtensions = fileTypes
+  //       .toString()
+  //       .toUpperCase()
+  //       .replace(/^\//, "")
+  //       .replace(/\/$/, "")
+  //       .replace(/\|/g, ", ");
+  //     const errorMessage = `Only ${allowedExtensions} files are allowed.`;
+  //     return cb(new Error(errorMessage));
+  //   }
+  // };
+
+  const mimeToExt = {
+    "image/jpeg": "jpg",
+    "image/png": "png",
+    "image/gif": "gif",
+    // Add other mime types if needed
+  };
+
   const checkFileType = (file, cb) => {
-    const extname = fileTypes.test(
-      path.extname(file.originalname).toLowerCase()
-    );
+    console.log(file, "file");
+
     const mimetype = fileTypes.test(file.mimetype);
 
-    if (mimetype && extname) {
-      return cb(null, true);
+    if (mimetype) {
+      const extname = mimeToExt[file.mimetype]; // Get the extension from mime type
+      if (extname) {
+        // Optionally, rename the file to include the correct extension
+        file.originalname = `${file.originalname}.${extname}`;
+        return cb(null, true);
+      } else {
+        const errorMessage = "File extension could not be determined.";
+        return cb(new Error(errorMessage));
+      }
     } else {
       const allowedExtensions = fileTypes
         .toString()
@@ -85,7 +121,6 @@ const uploadSingleFile = (fieldName, options) => {
   };
 };
 
-// Middleware for multiple file uploads
 const uploadMultipleFiles = (fieldName, maxCount, options) => {
   const upload = createMulter(options).array(fieldName, maxCount);
   return (req, res, next) => {
