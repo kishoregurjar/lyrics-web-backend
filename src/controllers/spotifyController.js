@@ -218,11 +218,87 @@ const fetchArtistAlbums = async (artistId, limit, offset, accessToken) => {
 
 /**with Cache  */
 module.exports.artistAlbums = async (req, res) => {
-  const { artistId, page } = req.query;
+  let { artistId, page } = req.query;
   const limit = 20;
 
   if (!artistId) {
     return successRes(res, 400, false, "Artist ID is required");
+  }
+  const limitValue = parseInt(limit, 10);
+  const pageValue = page ? parseInt(page, 10) : 1;
+
+  if (isNaN(limitValue) || limitValue <= 0) {
+    return successRes(res, 400, false, "Invalid limit value");
+  }
+
+  if (isNaN(pageValue) || pageValue <= 0) {
+    return successRes(res, 400, false, "Invalid page value");
+  }
+
+  const offset = (pageValue - 1) * limitValue;
+  const cacheKey = `artist_${artistId}_page_${pageValue}`;
+
+  const cachedData = myCache.get(cacheKey);
+  if (cachedData) {
+    return res.status(200).json({
+      success: true,
+      status: 200,
+      data: cachedData.albums || [],
+      total: cachedData.total,
+      limit: cachedData.limit,
+      page: cachedData.page,
+      totalPages: cachedData.totalPages,
+      message: "Artist Albums (from cache)"
+    });
+  }
+
+  try {
+    const accessToken = await getAccessToken();
+    if (!accessToken) {
+      return res.status(500).json({ success: false, message: "Failed to get access token" });
+    }
+
+    const albumsResponse = await fetchArtistAlbums(artistId, limitValue, offset, accessToken);
+    const albums = albumsResponse.items;
+    const total = albumsResponse.total;
+
+    // Store all relevant data in the cache, including pagination info
+    myCache.set(cacheKey, {
+      albums,
+      total,
+      limit: limitValue,
+      page: pageValue,
+      totalPages: Math.ceil(total / limitValue)
+    });
+
+    return res.status(200).json({
+      success: true,
+      status: 200,
+      data: albums,
+      total,
+      limit: limitValue,
+      page: pageValue,
+      totalPages: Math.ceil(total / limitValue),
+      message: "Artist Albums Data"
+    });
+  } catch (error) {
+    return catchRes(res, error);
+  }
+};
+
+
+//if id is not provided
+module.exports.artistAlbumsWithNameSearching = async (req, res) => {
+  let { artistId, page } = req.query;
+  const limit = 20;
+
+  if (!artistId) {
+    return successRes(res, 400, false, "Artist ID is required");
+  }
+
+  if (artistId.length != 22) {
+    artistId = await searchUsingArtistName(artistId)
+    console.log(artistId, "11111111111")
   }
 
   const limitValue = parseInt(limit, 10);
@@ -735,9 +811,8 @@ module.exports.songByArtist = async (req, res) => {
   }
 };
 
-module.exports.searchUsingArtist = async (req, res) => {
+const searchUsingArtistName = async (query) => {
   try {
-    let { query } = req.query;
 
     if (!query) {
       return successRes(res, 400, false, "Query Parameter Required");
@@ -760,8 +835,9 @@ module.exports.searchUsingArtist = async (req, res) => {
 
     const response = await axios.get(searchUrl, { headers, params });
 
-    console.log(response.data.items, "response")
-    res.send(response.data.artists.items[0].id)
+    // console.log(response.data.items, "response")
+    // res.send(response.data.artists.items[0].id)
+    return response.data.artists.items[0].id
   } catch (error) {
     return catchRes(res, error);
   }

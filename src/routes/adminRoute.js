@@ -210,7 +210,7 @@ router.delete(
 // router.post("/search-songs", controller.spotifyController.searchSongSpotify);
 
 router.get("/album/songs", controller.spotifyController.getAlbumSong); //from spotify
-router.get("/artist/song", controller.spotifyController.artistAlbums); //from spotify
+router.get("/artist/song", controller.spotifyController.artistAlbumsWithNameSearching); //from spotify
 router.post('/upload-artist-csv-file', uploadArtistCsvFile, controller.spotifyController.uploadArtistDetails)
 
 
