@@ -241,11 +241,10 @@ module.exports.artistAlbums = async (req, res) => {
 
   const cachedData = myCache.get(cacheKey);
   if (cachedData) {
-    // Return all cached data, including pagination info
     return res.status(200).json({
       success: true,
       status: 200,
-      data: cachedData.albums,
+      data: cachedData.albums || [],
       total: cachedData.total,
       limit: cachedData.limit,
       page: cachedData.page,
@@ -733,6 +732,38 @@ module.exports.songByArtist = async (req, res) => {
     return successRes(res, 200, true, "Songs Fetched successfully", allTracks || [])
   } catch (error) {
     return catchRes(res, error)
+  }
+};
+
+module.exports.searchUsingArtist = async (req, res) => {
+  try {
+    let { query } = req.query;
+
+    if (!query) {
+      return successRes(res, 400, false, "Query Parameter Required");
+    }
+
+    const token = await getAccessToken();
+    if (!token) {
+      return successRes(res, 500, false, "Failed to get access token", [])
+    }
+    const searchUrl = `https://api.spotify.com/v1/search`;
+    const headers = {
+      Authorization: `Bearer ${token}`,
+    };
+
+    const params = {
+      q: query,
+      type: 'artist',
+      limit: 1,
+    };
+
+    const response = await axios.get(searchUrl, { headers, params });
+
+    console.log(response.data.items, "response")
+    res.send(response.data.artists.items[0].id)
+  } catch (error) {
+    return catchRes(res, error);
   }
 };
 
