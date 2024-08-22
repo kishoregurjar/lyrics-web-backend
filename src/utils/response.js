@@ -17,7 +17,7 @@ const swrRes = (res) => {
 const catchRes = (res, error) => {
     return res.status(500).json({
         success: false,
-        message: error.stack
+        message: error.message
     })
 }
 
