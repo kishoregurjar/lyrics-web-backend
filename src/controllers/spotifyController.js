@@ -291,7 +291,7 @@ module.exports.artistAlbums = async (req, res) => {
 module.exports.artistAlbumsWithNameSearching = async (req, res) => {
   let { artistId, page } = req.query;
   const limit = 20;
-
+  console.log(artistId, "artistId")
   if (!artistId) {
     return successRes(res, 400, false, "Artist ID is required");
   }
@@ -351,7 +351,7 @@ module.exports.artistAlbumsWithNameSearching = async (req, res) => {
     return res.status(200).json({
       success: true,
       status: 200,
-      data: albums,
+      data: albums || [],
       total,
       limit: limitValue,
       page: pageValue,
@@ -359,6 +359,7 @@ module.exports.artistAlbumsWithNameSearching = async (req, res) => {
       message: "Artist Albums Data"
     });
   } catch (error) {
+    console.log(error.message, "error")
     return catchRes(res, error);
   }
 };
@@ -837,6 +838,7 @@ const searchUsingArtistName = async (query) => {
 
     // console.log(response.data.items, "response")
     // res.send(response.data.artists.items[0].id)
+    console.log(response.data.artists.items[0].id, "artistIdddd")
     return response.data.artists.items[0].id
   } catch (error) {
     return catchRes(res, error);
