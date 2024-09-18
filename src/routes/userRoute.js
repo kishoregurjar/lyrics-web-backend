@@ -66,4 +66,5 @@ router.put("/update-user-comment-status", verifyUserToken, controller.userContro
 router.put("/edit-user-comment", verifyUserToken, controller.userController.editUserComment);
 router.delete("/delete-user-comment", verifyUserToken, controller.userController.deleteUserComment);
 
+
 module.exports = router;

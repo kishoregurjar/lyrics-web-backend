@@ -5,7 +5,8 @@ const axios = require("axios");
 const hotAlbmubModel = require("../models/hotAlbmubModel");
 const topChartModel = require('../models/topChartModel')
 const xml2js = require("xml2js");
-const ArtistBiblio = require('../models/artistBiblio')
+const ArtistBiblio = require('../models/artistBiblio');
+const actualHotAlbumModel = require("../models/actualHotAlbumModel");
 
 
 //by admin
@@ -91,7 +92,6 @@ module.exports.addHotSong = async (req, res) => {
     try {
         const { isrcKey, status } = req.body;
 
-        // Validate `status`
         if (!status || (typeof status !== 'string' && !Array.isArray(status))) {
             await session.abortTransaction();
             session.endSession();
@@ -169,6 +169,96 @@ module.exports.addHotSong = async (req, res) => {
         return catchRes(res, error);
     }
 };
+
+module.exports.addHotAlbums = async (req, res) => {
+    let { _id } = req.user;
+
+    const session = await mongoose.startSession();
+    session.startTransaction();
+
+    try {
+        const { albumId, status } = req.body;
+
+        // Validate status
+        if (!status || status !== 'hotAlbum') {
+            await session.abortTransaction();
+            session.endSession();
+            return successRes(res, 400, false, "Invalid status, only 'hotAlbum' is allowed");
+        }
+
+        // Validate albumId
+        if (!albumId) {
+            await session.abortTransaction();
+            session.endSession();
+            return successRes(res, 400, false, "albumId is required for hotAlbum");
+        }
+
+        const findAdmin = await Admin.findById(_id).session(session);
+        if (!findAdmin) {
+            await session.abortTransaction();
+            session.endSession();
+            return successRes(res, 401, false, "Admin Not Found");
+        }
+
+        const checkAlreadyAlbum = await actualHotAlbumModel.find({ albumId })
+        console.log(checkAlreadyAlbum, "1111111111")
+        if (checkAlreadyAlbum.length > 0) {
+            return successRes(res, 409, false, "Album Already exists")
+        }
+
+        // Get Spotify access token
+        const spotifyToken = await getAccessToken();
+        if (!spotifyToken) {
+            await session.abortTransaction();
+            session.endSession();
+            return successRes(res, 500, false, "Failed to obtain Spotify token");
+        }
+
+        // Fetch album data from Spotify using albumId
+        const albumResponse = await axios.get(`https://api.spotify.com/v1/albums/${albumId}`, {
+            headers: {
+                'Authorization': `Bearer ${spotifyToken}`
+            }
+        });
+
+        const album = albumResponse.data;
+
+        // Prepare album data
+        const albumData = {
+            albumId: album.id,
+            title: album.name,
+            artists: album.artists.map(artist => artist.name).join(', '),
+            releaseDate: album.release_date,
+            totalTracks: album.total_tracks,
+            image: album.images[0]?.url
+        };
+
+        // Save hotAlbum data
+        const newHotAlbum = new actualHotAlbumModel(albumData);
+        await newHotAlbum.save({ session });
+
+        // Commit transaction
+        await session.commitTransaction();
+        session.endSession();
+        return successRes(res, 201, true, "Hot album added successfully", albumData);
+    } catch (error) {
+        console.error("Error details:", error.response ? error.response.data : error.message);
+        await session.abortTransaction();
+        session.endSession();
+        return catchRes(res, error);
+    }
+};
+
+module.exports.getActualHotAlbum = async (req, res) => {
+    try {
+        const hotAlbum = await actualHotAlbumModel.find()
+            .sort({ createdAt: -1 })
+        return successRes(res, 200, true, "Hot Albums", hotAlbum)
+    } catch (error) {
+        return catchRes(res, error)
+    }
+}
+
 
 module.exports.getHotSongList = async (req, res) => {
     try {

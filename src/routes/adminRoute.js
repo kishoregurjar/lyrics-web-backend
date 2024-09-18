@@ -160,6 +160,9 @@ router.post(
   controller.lyricsController.addHotSong
 );
 
+router.post('/add-actual-hot-album', verifyAdminToken, controller.lyricsController.addHotAlbums)
+router.get('/get-actual-hot-album', verifyAdminToken, controller.lyricsController.getActualHotAlbum)
+
 router.get(
   "/get-hot-album",
   verifyAdminToken,
