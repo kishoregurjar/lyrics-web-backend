@@ -160,8 +160,15 @@ router.post(
   controller.lyricsController.addHotSong
 );
 
-router.post('/add-actual-hot-album', verifyAdminToken, controller.lyricsController.addHotAlbums)
-router.get('/get-actual-hot-album', verifyAdminToken, controller.lyricsController.getActualHotAlbum)
+router.post(
+  "/add-actual-hot-album",
+  verifyAdminToken,
+  controller.lyricsController.addHotAlbums
+);
+router.get(
+  "/get-actual-hot-album",
+  controller.lyricsController.getActualHotAlbum
+);
 
 router.get(
   "/get-hot-album",
@@ -213,9 +220,14 @@ router.delete(
 // router.post("/search-songs", controller.spotifyController.searchSongSpotify);
 
 router.get("/album/songs", controller.spotifyController.getAlbumSong); //from spotify
-router.get("/artist/song", controller.spotifyController.artistAlbumsWithNameSearching); //from spotify
-router.post('/upload-artist-csv-file', uploadArtistCsvFile, controller.spotifyController.uploadArtistDetails)
-
-
+router.get(
+  "/artist/song",
+  controller.spotifyController.artistAlbumsWithNameSearching
+); //from spotify
+router.post(
+  "/upload-artist-csv-file",
+  uploadArtistCsvFile,
+  controller.spotifyController.uploadArtistDetails
+);
 
 module.exports = router;
