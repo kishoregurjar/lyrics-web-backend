@@ -466,3 +466,20 @@ module.exports.artistDetailsByDB = async (req, res) => {
         return catchRes(res, error)
     }
 }
+
+module.exports.deleteActualHotAlbum = async (req, res) => {
+    try {
+        const { albumId } = req.query;
+        if (!albumId) {
+            return successRes(res, 400, false, "Please Provide Album id")
+        }
+        const album = await actualHotAlbumModel.find({ albumId: albumId });
+        if (!album) {
+            return successRes(res, 404, false, "Album Not Found", null);
+        }
+        await actualHotAlbumModel.deleteOne({ albumId: albumId });
+        return successRes(res, 200, true, "Album Deleted Successfully", null);
+    } catch (error) {
+        return catchRes(res, error)
+    }
+}

@@ -170,6 +170,8 @@ router.get(
   controller.lyricsController.getActualHotAlbum
 );
 
+router.delete('/delete-actual-hot-album', verifyAdminToken, controller.lyricsController.deleteActualHotAlbum)
+
 router.get(
   "/get-hot-album",
   verifyAdminToken,
