@@ -698,34 +698,92 @@ module.exports.searchPageAPI = async (req, res) => {
   }
 };
 
+// module.exports.uploadArtistDetails = async (req, res) => {
+//   try {
+//     const file = req.file;
+//     const artistId = req.body.artistId; // Get artistId from request body
+
+//     if (!file || !artistId) {
+//       return res.status(400).json({ message: 'No file or artistId provided' });
+//     }
+
+//     const response = await ArtistBiblio.findOne({ artistId: artistId })
+//     if (response) {
+//       return successRes(res, 409, false, "Artist Details Already Addeds")
+//     }
+
+//     const results = [];
+
+//     fs.createReadStream(file.path)
+//       .pipe(csv())
+//       .on('data', (row) => {
+//         results.push(row);
+//       })
+//       .on('end', async () => {
+//         try {
+//           for (const row of results) {
+//             if (!row.Artist || !row.bibliography) {
+//               throw new Error('CSV structure is invalid');
+//             }
+
+//             const artistBiblio = new ArtistBiblio({
+//               _id: new mongoose.Types.ObjectId(),
+//               Artist: row.Artist,
+//               bibliography: row.bibliography,
+//               artistId: artistId
+//             });
+
+//             await artistBiblio.save();
+//           }
+
+//           return successRes(res, 200, true, "CSV processed and Saved Data successfully");
+//         } catch (error) {
+//           console.error('Error processing CSV data:', error);
+//           return catchRes(res, error)
+//         }
+//       })
+//       .on('error', (error) => {
+//         return catchRes(res, error)
+//       });
+
+//   } catch (error) {
+//     return catchRes(res, error)
+//   }
+// }
+
 module.exports.uploadArtistDetails = async (req, res) => {
   try {
     const file = req.file;
-    const artistId = req.body.artistId; // Get artistId from request body
+    const artistId = req.body.artistId;
 
     if (!file || !artistId) {
       return res.status(400).json({ message: 'No file or artistId provided' });
     }
 
-    const response = await ArtistBiblio.findOne({ artistId: artistId })
+    const response = await ArtistBiblio.findOne({ artistId: artistId });
     if (response) {
-      return successRes(res, 409, false, "Artist Details Already Addeds")
+      return successRes(res, 409, false, "Artist Details Already Added");
     }
 
     const results = [];
 
-    fs.createReadStream(file.path)
+    fs.createReadStream(file.path, { encoding: 'utf8' })
       .pipe(csv())
       .on('data', (row) => {
-        results.push(row);
+        // Remove potential BOM from the "Artist" field
+        if (row['﻿Artist']) {
+          row.Artist = row['﻿Artist'].replace(/^\uFEFF/, ''); // Remove BOM if it exists
+        }
+
+        if (row.Artist && row.bibliography) {
+          results.push(row);
+        } else {
+          throw new Error(`CSV structure is invalid: ${JSON.stringify(row)}`);
+        }
       })
       .on('end', async () => {
         try {
           for (const row of results) {
-            if (!row.Artist || !row.bibliography) {
-              throw new Error('CSV structure is invalid');
-            }
-
             const artistBiblio = new ArtistBiblio({
               _id: new mongoose.Types.ObjectId(),
               Artist: row.Artist,
@@ -736,20 +794,20 @@ module.exports.uploadArtistDetails = async (req, res) => {
             await artistBiblio.save();
           }
 
-          return successRes(res, 200, true, "CSV processed and Saved Data successfully");
+          return successRes(res, 200, true, "CSV processed and saved data successfully");
         } catch (error) {
           console.error('Error processing CSV data:', error);
-          return catchRes(res, error)
+          return catchRes(res, error);
         }
       })
       .on('error', (error) => {
-        return catchRes(res, error)
+        return catchRes(res, error);
       });
 
   } catch (error) {
-    return catchRes(res, error)
+    return catchRes(res, error);
   }
-}
+};
 
 const SONG_LIMIT = 80;
 
