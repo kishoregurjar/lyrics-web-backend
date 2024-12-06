@@ -212,7 +212,7 @@ module.exports.verifyUser = async (req, res) => {
 
 module.exports.editUserProfile = async (req, res) => {
   const userId = req.user._id;
-  let { firstName, lastName, mobile } = req.body;
+  let { firstName, lastName, mobile, avatar } = req.body;
   const session = await mongoose.startSession();
   session.startTransaction();
   try {
@@ -220,6 +220,7 @@ module.exports.editUserProfile = async (req, res) => {
     if (firstName) update.firstName = firstName;
     if (lastName) update.lastName = lastName;
     if (mobile) update.mobile = mobile;
+    if (avatar) update.avatar = avatar;
 
     const options = { new: true, session };
 
@@ -238,7 +239,7 @@ module.exports.editUserProfile = async (req, res) => {
       res,
       200,
       true,
-      "User profile updated successfully.",
+      "User Profile Updated Successfully.",
       user
     );
   } catch (error) {

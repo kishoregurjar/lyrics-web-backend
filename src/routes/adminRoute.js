@@ -18,6 +18,7 @@ const {
   uploadTestimonialAvatar,
   uploadNewsAvatar,
   uploadCarouselImages,
+  uploadArtistCsvFile,
 } = require("../utils/multer");
 const { uploadProfile, uploadCarousel } = require("../utils/multerConfig");
 
@@ -159,13 +160,25 @@ router.post(
   controller.lyricsController.addHotSong
 );
 
+router.post(
+  "/add-actual-hot-album",
+  verifyAdminToken,
+  controller.lyricsController.addHotAlbums
+);
+router.get(
+  "/get-actual-hot-album",
+  controller.lyricsController.getActualHotAlbum
+);
+
+router.delete('/delete-actual-hot-album', verifyAdminToken, controller.lyricsController.deleteActualHotAlbum)
+
 router.get(
   "/get-hot-album",
   verifyAdminToken,
   controller.lyricsController.getHotSongList
 );
 
-router.get("/search-song", controller.lyricsController.searchSong);
+router.get("/search-song", controller.spotifyController.searchSong);
 
 router.delete(
   "/delete-song",
@@ -206,15 +219,17 @@ router.delete(
 );
 
 /* Spotify Powered APIs */
-router.post("/search-songs", controller.spotifyController.searchSongSpotify);
+// router.post("/search-songs", controller.spotifyController.searchSongSpotify);
+
+router.get("/album/songs", controller.spotifyController.getAlbumSong); //from spotify
 router.get(
-  "/artist/song-search",
-  controller.spotifyController.artistSongSpotify
+  "/artist/song",
+  controller.spotifyController.artistAlbumsWithNameSearching
+); //from spotify
+router.post(
+  "/upload-artist-csv-file",
+  uploadArtistCsvFile,
+  controller.spotifyController.uploadArtistDetails
 );
-router.get("/album/song-search", controller.spotifyController.albumSongSpotify);
-router.get("/album/songs", controller.lyricsController.getAlbumSong); //from spotify
-router.get("/artist/song", controller.lyricsController.artistSong); //from spotify
-
-
 
 module.exports = router;
